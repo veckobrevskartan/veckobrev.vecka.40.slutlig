@@ -116,11 +116,14 @@
       disableClusteringAtZoom:8, maxClusterRadius:60, chunkedLoading:true
     });
   }
-  const clustersByCat = {}; Object.keys(CATS).forEach(k => clustersByCat[k] = makeClusterGroup());
+  const clustersByCat = {};
+  Object.keys(CATS).forEach(k => clustersByCat[k] = makeClusterGroup());
+
   function makeIcon(catKey){
     const {emoji, color} = CATS[catKey] || {emoji:'❓', color:'#eee'};
     return L.divIcon({ className: '', html: `<span class="marker-emoji" style="background:${color}">${emoji}</span>`, iconSize:[26,26], iconAnchor:[13,13] });
   }
+
   function popupHtml(e){
     const cat = CATS[e.cat] ? CATS[e.cat].label : e.cat;
     const link = e.url ? `<p><a href="${e.url}" target="_blank" rel="noopener">Öppna källa</a></p>` : '';
@@ -134,6 +137,7 @@
     </div>`;
   }
 
+  // === HÄNDELSER (rensad och validerad array) ===
   const events = [
     // Sverige
     {country:'SE',cat:'HYBRID',title:'Misstänkta konton söker drönarpiloter i forum',place:'Sverige (online)',date:'2025-10-05',lat:59.334,lng:18.067,summary:'Nya, misstänkta Facebook-konton erbjuder betalning för flygningar nära skyddsobjekt, och de verkar veta vilka de ska rikta in sig på. Administratörer tar bort profiler varje vecka.',url:'https://www.sverigesradio.se/artikel/dronarpiloter-soks-upp-pa-facebook-for-att-spana-pa-skyddsobjekt',source:'Sveriges Radio (2025)'},
@@ -148,6 +152,7 @@
     {country:'SE',cat:'INFRA',title:'Cyberangrepp mot kraftvärmeverket Mältan',place:'Karlskrona (SE)',date:'2025-10-03',lat:56.185,lng:15.633,summary:'Angrepp utreds av polis i samarbete med Affärsverken. Ingen påverkan på leveranser.',url:'https://www.aftonbladet.se/nyheter/a/1MmQEM/kraftvarmeverket-maltan-i-karlskrona-utsatt-for-cyberangrepp',source:'Aftonbladet (2025)'},
     {country:'SE',cat:'INTEL',title:'Gängman med koppling till S-striden i Botkyrka åtalad igen',place:'Botkyrka (SE)',date:'2025-10-03',lat:59.239,lng:17.826,summary:'Nytt åtal väcker frågor om försök till politisk påverkan från gängmiljö.',url:'https://www.expressen.se/nyheter/politik/efter-s-striden-i-botkyrka-gangmannen-atalad-igen/',source:'Expressen (2025)'},
     {country:'SE',cat:'MIL',title:'FOI testar skydd mot drönare',place:'Arvidsjaur (SE)',date:'2025-09-29',lat:65.593,lng:19.176,summary:'Fältförsök med upptäckt/bekämpning och skydd mot UAV med FM & FMV.',url:'https://www.foi.se/nyheter-och-press/nyheter/2025-09-29-har-testar-foi-skydd-mot-dronare.html',source:'FOI (2025-09-29)'},
+
     // Europa & Norden
     {country:'EU',cat:'HYBRID',title:'EU – bolag kopplas till ryska kemvapenprogram',place:'Barcelona (ES)',date:'2025-09-30',lat:41.385,lng:2.173,summary:'13 ton kemikalier beslagtogs 2024; nätverk kring Catrosa Reactiv granskas.',url:'https://alleyesonwagner.org/2025/09/30/the-catrosa-network-eu-companies-linked-to-russian-chemical-weapons-developers/',source:'All Eyes on Wagner (2025-09-30)'},
     {country:'NO',cat:'INFRA',title:'Totalt stopp i tågtrafiken efter tekniskt fel och oväder “Amy”',place:'Norge (nationellt)',date:'2025-10-04',lat:59.913,lng:10.752,summary:'Kommunikationsfel hos Bane NOR; åtgärdat inom ~30 min men stora följdeffekter.',url:'https://omni.se/totalstopp-i-tagtrafiken-i-hela-norge/a/qP2L1o',source:'Omni (2025-10-04)'},
@@ -165,52 +170,33 @@
     {country:'AT',cat:'INTEL',title:'Österrike: Nya TASS-journalister utreds för spionkopplingar',place:'Wien (AT)',date:'2025-10-01',lat:48.208,lng:16.373,summary:'Olga Kukla och Maxim Cherevik kopplas till SVR-nätverk enligt The Insider/Der Standard.',url:'https://theins.ru/inv/285463',source:'The Insider / Der Standard (2025)'},
     {country:'BE',cat:'INTEL',title:'Belgien: säkerhetstjänsttjänsteman misstänks för spioneri för Kina',place:'Bryssel (BE)',date:'2025-10-03',lat:50.846,lng:4.352,summary:'VSSE-tjänsteman gripen och åtalad för spioneri; uppges gälla Kina enligt rapporter.',url:'https://www.belganewsagency.eu/belgian-security-officer-arrested-on-suspicion-of-spying-for-china',source:'Belga / Politico Europe (2025)'},
     {country:'CZ',cat:'INTEL',title:'Tjeckien: GRU bakom explosionerna i Vrbětice (bakgrund)',place:'Vrbětice (CZ)',date:'2014 / 2024–2025 bekräftat',lat:49.084,lng:17.831,summary:'GRU-enhet 29155 kopplas till sabotage enligt tjeckisk polis och granskning av Christo Grozev.',url:'https://youtu.be/-miZLXLApKM',source:'Grozev – Russia’s Secret War in Europe'},
+
     // Storbritannien
     {country:'UK',cat:'TERROR',title:'Fyra skadade vid attack utanför synagoga i Manchester',place:'Manchester (UK)',date:'2025-10-02',lat:53.507,lng:-2.252,summary:'Bil och kniv; utreds som terror. Sex personer gripna i ärendet.',url:'https://www.fdd.org/analysis/2025/10/02/terrorist-attack-on-uk-synagogue-leaves-2-dead-wounds-4/',source:'FDD (2025-10-02)'},
     {country:'UK',cat:'INTEL',title:'Gripande efter cyberattack mot Heathrow och EU-flygplatser',place:'London (UK)',date:'2025-10-02',lat:51.47,lng:-0.454,summary:'Man i 40-årsåldern gripen i West Sussex efter attack mot MUSE; stora störningar.',url:'https://apnews.com/article/airports-cyberattack-brussels-heathrow-941e5bfe2bc2a327aeabd9a3095f1426',source:'AP (2025-10-02)'},
     {country:'UK',cat:'DRONE',title:'Sex gripna för drönarflygning vid Windsor – domar för fängelsesmuggling',place:'Windsor (UK)',date:'2025-09-16',lat:51.483,lng:-0.604,summary:'Gripanden inom tillfälligt restriktionsområde under statsbesök; separata domar om drönarsmuggling.',url:'https://abcnews.go.com/International/wireStory/man-arrested-after-drone-breaches-airspace-restrictions-windsor-125626653',source:'ABC News (2025)'},
+
     // PL/LT/DE + Balkan + MD
     {country:'PL/LT/DE',cat:'TERROR',title:'Misstänkt GRU-plan med drönare och “majsburkar”',place:'Polen/Litauen/Tyskland',date:'2025-10-02',lat:52.229,lng:21.012,summary:'Polen griper flera; uppgifter om mål i LT/DE; beslag av burkar, drönarkomponenter och SIM-kort.',url:'https://euromaidanpress.com/2025/10/02/explosives-in-corn-cans-russias-plot-to-strike-poland-lithuania-and-germany-revealed/',source:'Euromaidan Press (2025-10-02)'},
     {country:'RS',cat:'HYBRID',title:'Serbien: elva gripna för hatbrott i FR/DE',place:'Belgrad (RS)',date:'2025-09-29',lat:44.787,lng:20.449,summary:'Placering av grishuvuden m.m.; möjlig påverkan utreds i Frankrike.',url:'https://www.reuters.com/world/serbia-arrests-11-placing-pig-heads-outside-mosques-france-2025-09-29/',source:'Reuters (2025-09-29)'},
     {country:'MD',cat:'HYBRID',title:'Moldavien: Pro-EU-parti segrar i val präglat av rysk påverkan',place:'Chișinău (MD)',date:'2025-09-28',lat:47.01,lng:28.863,summary:'PAS vinner; rapporter om desinformation, cyberattacker och falska bombhot.',url:'https://www.reuters.com/world/europe/moldovas-pro-eu-government-edges-towards-majority-pivotal-vote-2025-09-28/',source:'Reuters (2025-09-28)'},
+
     // Nordamerika + Venezuela
     {country:'CA',cat:'LEGAL',title:'Kanada terrorlistar Bishnoi-gänget',place:'Ottawa (CA)',date:'2025-09-30',lat:45.421,lng:-75.697,summary:'Stöd blir olagligt; tillgångar kan frysas; gänget leds av Lawrence Bishnoi.',url:'https://www.canada.ca/en/public-safety-canada/news/2025/09/government-of-canada-lists-the-bishnoi-gang-as-a-terrorist-entity.html',source:'Public Safety Canada (2025-09-30)'},
     {country:'US',cat:'MIL',title:'USA: Trump och Hegseth skärper militärens krav',place:'Quantico, VA (US)',date:'2025-09-30',lat:38.522,lng:-77.305,summary:'Högre fysiska krav, tätare tester, förbud mot skägg, avskaffade DEI-program.',url:'https://www.firstpost.com/world/fat-troops-woke-standards-what-trump-doesnt-want-in-americas-generals-13938431.html',source:'Firstpost (2025-10-01)'},
     {country:'US',cat:'POLICY',title:'USA: Dragkamp om nationalgardet i Portland',place:'Portland, OR (US)',date:'2025-10-01',lat:45.515,lng:-122.679,summary:'Diskussion om mobilisering för att skydda federala byggnader; juridiska steg lokalt.',url:'https://nypost.com/2025/10/01/us-news/inside-the-antifa-siege-on-war-zone-portland-and-the-resistance-to-the-national-guard-cleaning-it-up/',source:'New York Post (2025-10-01)'},
     {country:'US',cat:'TERROR',title:'USA: Tidigare nationalgardist åtalas för försök att beväpna al-Qaida',place:'Oklahoma City, OK (US)',date:'2025-10-02',lat:35.467,lng:-97.516,summary:'Försök att skicka 3D-printade vapendelar; mottagaren var FBI under täckmantel.',url:'https://www.jpost.com/international/islamic-terrorism/article-869306',source:'Jerusalem Post (2025-10-02)'},
-    {country:'VE',cat:'MIL',title:'Venezuela: Miliser mobiliseras, USA förstärker i Karibien',place:'Caracas (VE)',date:'2025-09-22',lat:10.48,lng:-66.903,summary:'USA förstärker med fartyg och F‑35; regeringen tränar civila miliser.',url:'https://www.reuters.com/pictures/pictures-venezuelan-military-trains-civilians-amid-us-tensions-2025-09-22/',source:'Reuters (2025-09-22)'},
+    {country:'VE',cat:'MIL',title:'Venezuela: Miliser mobiliseras, USA förstärker i Karibien',place:'Caracas (VE)',date:'2025-09-22',lat:10.48,lng:-66.903,summary:'USA förstärker med fartyg och F-35; regeringen tränar civila miliser.',url:'https://www.reuters.com/pictures/pictures-venezuelan-military-trains-civilians-amid-us-tensions-2025-09-22/',source:'Reuters (2025-09-22)'},
+
     // Ukraina – nya gripanden
     {country:'UA',cat:'TERROR',title:'Ukraina: SBU stoppar rysk “dejtfälla”',place:'Lviv (UA)',date:'2025-10-01',lat:49.839,lng:24.029,summary:'Falska kvinnoprofiler lockade soldater till platser med laddningar; två liv räddades.',url:'https://newsukraine.rbc.ua/news/russian-agents-used-fake-dating-profiles-1759317425.html',source:'RBC Ukraine (2025-10-01)'},
     {country:'UA',cat:'INTEL',title:'Ukraina: SBU griper FSB-agent i Chmelnytskyj',place:'Khmelnytskyi Oblast (UA)',date:'2025-10-03',lat:49.417,lng:27.0,summary:'Lokal hantverkare rekryterad via Telegram samlade in koordinater till militära mål för planerade attacker.',url:'https://english.nv.ua/nation/suspected-russian-agent-caught-guiding-attacks-on-western-ukraine-50548678.html',source:'NV (2025-10-03)'},
     {country:'UA',cat:'INTEL',title:'Ukraina: Ryskt agentpar gripet i Mykolajiv',place:'Mykolaiv (UA)',date:'2025-10-03',lat:46.975,lng:31.994,summary:'Agentpar försökte inhämta uppgifter om försvarsindustri; kvinnan rekryterad av rysk underrättelsetjänst.',url:'https://odessa-journal.com/ssu-exposes-spy-duo-in-mykolaiv-targeting-ukraines-defense-industry-secrets',source:'Odessa Journal (2025-10-03)'},
-    {country:'UA',cat:'INTEL',title:'Ukraina: GRU-agent gripen i Slovjansk',place:'Sloviansk (UA)',date:'2025-10-03',lat:48.854,lng:37.607,summary:'53-årig kvinna samlade koordinater till sjukhus och militära mål för planerade flyganfall.',url:'https://uazmi.org/news/post/907580ec3308fb8a52f35f8828c2eaf5',source:'UAzmi (2025-10-03)'}
- {country:'UA',cat:'INTEL',title:'Ukraina: GRU-agent gripen i Slovjansk',place:'Sloviansk (UA)',date:'2025-10-03',lat:48.854,lng:37.607,summary:'53-årig kvinna samlade koordinater till sjukhus och militära mål för planerade flyganfall.',url:'https://uazmi.org/news/post/907580ec3308fb8a52f35f8828c2eaf5',source:'UAzmi (2025-10-03)'},
-{
-  "country": "BE",
-  "cat": "DRONE",
-  "title": "Okända drönare över militärbas",
-  "place": "Elsenborn, Belgien",
-  "date": "2025-10-03",
-  "lat": 50.473,
-  "lng": 6.206,
-  "summary": "Flera okända drönare observerades natten till 3 oktober över det belgiska militärövningsområdet Elsenborn nära tysk-belgiska gränsen. Enligt försvarsdepartementet rör det sig om omkring femton farkoster, varav några kan ha korsat in i Tyskland. Händelsen utreds och inga misstänkta har identifierats. Den inträffade samtidigt som liknande observationer rapporterades i Tyskland och vid Münchens flygplats.",
-  "url": "https://www.euronews.com/2025/10/03/drones-detected-flying-over-military-base-in-eastern-belgium-reports-say",
-  "source": "Euronews"
-},
-{
-  "country": "SE",
-  "cat": "DRONE",
-  "title": "Två misstänkta för drönarflygning vid Gärdet",
-  "place": "Gärdet, Stockholm",
-  "date": "2025-10-05",
-  "lat": 59.345,
-  "lng": 18.102,
-  "summary": "Polisen identifierade på söndagskvällen den 5 oktober två personer som flugit drönare i ett restriktionsområde på Gärdet i centrala Stockholm. De misstänks för brott mot luftfartslagen. Området rymmer flera försvarsmyndigheter, bland annat Försvarsmaktens högkvarter på Lidingövägen och Försvarets materielverk på Banérgatan. Stora delar av Gärdet är markerade som restriktionszoner (R-områden) enligt LFV:s drönarkarta, vilket innebär att drönarflygning kräver särskilt tillstånd.",
-  "url": "https://www.aftonbladet.se/nyheter/a/Rr77qd/aftonbladet-direkt?pinnedEntry=1410839",
-  "source": "Aftonbladet"
-}
-];
+    {country:'UA',cat:'INTEL',title:'Ukraina: GRU-agent gripen i Slovjansk',place:'Sloviansk (UA)',date:'2025-10-03',lat:48.854,lng:37.607,summary:'53-årig kvinna samlade koordinater till sjukhus och militära mål för planerade flyganfall.',url:'https://uazmi.org/news/post/907580ec3308fb8a52f35f8828c2eaf5',source:'UAzmi (2025-10-03)'},
 
+    // — Nya poster du la in i fri JSON-form: normaliserade här —
+    {country:'BE',cat:'DRONE',title:'Okända drönare över militärbas',place:'Elsenborn, Belgien',date:'2025-10-03',lat:50.473,lng:6.206,summary:'Flera okända drönare observerades natten till 3 oktober över det belgiska militärövningsområdet Elsenborn nära tysk-belgiska gränsen. Enligt försvarsdepartementet rör det sig om omkring femton farkoster, varav några kan ha korsat in i Tyskland. Händelsen utreds och inga misstänkta har identifierats.',url:'https://www.euronews.com/2025/10/03/drones-detected-flying-over-military-base-in-eastern-belgium-reports-say',source:'Euronews'},
+    {country:'SE',cat:'DRONE',title:'Två misstänkta för drönarflygning vid Gärdet',place:'Gärdet, Stockholm',date:'2025-10-05',lat:59.345,lng:18.102,summary:'Polisen identifierade den 5 oktober två personer som flugit drönare i ett restriktionsområde på Gärdet i centrala Stockholm. De misstänks för brott mot luftfartslagen.',url:'https://www.aftonbladet.se/nyheter/a/Rr77qd/aftonbladet-direkt?pinnedEntry=1410839',source:'Aftonbladet'}
   ];
 
   function addEventsToMap(data){
@@ -252,7 +238,7 @@
   // Fokus-väljare
   const FOCUS = {
     world:{center:[54.5,10],zoom:5},
-    se:{center:[62.0,16.0],zoom:4},
+    se:{center:[62.0,16.0],zoom:5},
     no:{center:[64.5,11.0],zoom:4},
     dk:{center:[56.0,10.0],zoom:6},
     de:{center:[51.2,10.45],zoom:5},
