@@ -136,7 +136,7 @@
 
   const events = [
     // Sverige
-    {country:'SE',cat:'HYBRID',title:'Misstänkta konton söker drönarpiloter i forum',place:'Sverige (online)',date:'2025-10-05',lat:59.334,lng:18.067,summary:'Nya, misstänkta Facebook-konton erbjuder betalning för flygningar nära skyddsobjekt. Polisen varnar och admin tar bort profiler varje vecka.',url:'https://www.sverigesradio.se/artikel/dronarpiloter-soks-upp-pa-facebook-for-att-spana-pa-skyddsobjekt',source:'Sveriges Radio (2025)'},
+    {country:'SE',cat:'HYBRID',title:'Misstänkta konton söker drönarpiloter i forum',place:'Sverige (online)',date:'2025-10-05',lat:59.334,lng:18.067,summary:'Nya, misstänkta Facebook-konton erbjuder betalning för flygningar nära skyddsobjekt, och de verkar veta vilka de ska rikta in sig på. Administratörer tar bort profiler varje vecka.',url:'https://www.sverigesradio.se/artikel/dronarpiloter-soks-upp-pa-facebook-for-att-spana-pa-skyddsobjekt',source:'Sveriges Radio (2025)'},
     {country:'SE',cat:'NUCLEAR',title:'Ryskt uranfartyg med motorhaveri utanför Blekinge',place:'31 km SO om Hasslö, Blekinge (SE)',date:'2025-09-29',lat:56.118,lng:15.585,summary:'Panamaflaggade Mikhail Dudin ligger för ankar efter motorhaveri; tidigare urantransporter till Seversk. Kustbevakning/Marinen informerade.',url:'https://www.sydostran.se/nyheter/ryskt-fartyg-med-motorhaveri-utanfor-blekinge-anvands-for-att-frakta-uran/',source:'Hultgren, 2025 / Sydöstran'},
     {country:'SE',cat:'DRONE',title:'Drönarlarm vid Ronneby flygplats',place:'Ronneby Airport (SE)',date:'2025-09-29',lat:56.266,lng:15.265,summary:'Misstänkt drönare. Plan vände mot Kalmar innan landning i Ronneby. Civil/militär flygplats (F 17).',url:'https://www.expressen.se/nyheter/expressen-direkt/?post=1ddb8d7c-0474-4d53-af33-f0cc6c69a7ed',source:'Expressen Direkt (2025)'},
     {country:'SE',cat:'DRONE',title:'Drönare stoppade flygtrafik i Sundsvall (Polisen)',place:'Sundsvall–Timrå Airport (SE)',date:'2025-09-28',lat:62.529,lng:17.444,summary:'Drönare i förbudszon. Ett plan fick vänta ~40 min. En man greps (vårdslöshet i flygtrafik m.m.).',url:'https://polisen.se/aktuellt/handelser/2025/september/29/29-september-07.14-sammanfattning-natt-vasternorrlands-lan/',source:'Polisen (2025-09-29)'},
@@ -185,6 +185,30 @@
     {country:'UA',cat:'INTEL',title:'Ukraina: SBU griper FSB-agent i Chmelnytskyj',place:'Khmelnytskyi Oblast (UA)',date:'2025-10-03',lat:49.417,lng:27.0,summary:'Lokal hantverkare rekryterad via Telegram samlade in koordinater till militära mål för planerade attacker.',url:'https://english.nv.ua/nation/suspected-russian-agent-caught-guiding-attacks-on-western-ukraine-50548678.html',source:'NV (2025-10-03)'},
     {country:'UA',cat:'INTEL',title:'Ukraina: Ryskt agentpar gripet i Mykolajiv',place:'Mykolaiv (UA)',date:'2025-10-03',lat:46.975,lng:31.994,summary:'Agentpar försökte inhämta uppgifter om försvarsindustri; kvinnan rekryterad av rysk underrättelsetjänst.',url:'https://odessa-journal.com/ssu-exposes-spy-duo-in-mykolaiv-targeting-ukraines-defense-industry-secrets',source:'Odessa Journal (2025-10-03)'},
     {country:'UA',cat:'INTEL',title:'Ukraina: GRU-agent gripen i Slovjansk',place:'Sloviansk (UA)',date:'2025-10-03',lat:48.854,lng:37.607,summary:'53-årig kvinna samlade koordinater till sjukhus och militära mål för planerade flyganfall.',url:'https://uazmi.org/news/post/907580ec3308fb8a52f35f8828c2eaf5',source:'UAzmi (2025-10-03)'}
+    {
+  "country": "BE",
+  "cat": "DRONE",
+  "title": "Okända drönare över militärbas",
+  "place": "Elsenborn, Belgien",
+  "date": "2025-10-03",
+  "lat": 50.473,
+  "lng": 6.206,
+  "summary": "Flera okända drönare observerades natten till 3 oktober över det belgiska militärövningsområdet Elsenborn nära tysk-belgiska gränsen. Enligt försvarsdepartementet rör det sig om omkring femton farkoster, varav några kan ha korsat in i Tyskland. Händelsen utreds och inga misstänkta har identifierats. Den inträffade samtidigt som liknande observationer rapporterades i Tyskland och vid Münchens flygplats.",
+  "url": "https://www.euronews.com/2025/10/03/drones-detected-flying-over-military-base-in-eastern-belgium-reports-say",
+  "source": "Euronews / Svensk OSINT (2025)"
+},
+{
+  "country": "SE",
+  "cat": "DRONE",
+  "title": "Två misstänkta för drönarflygning vid Gärdet",
+  "place": "Gärdet, Stockholm",
+  "date": "2025-10-05",
+  "lat": 59.345,
+  "lng": 18.102,
+  "summary": "Polisen identifierade på söndagskvällen den 5 oktober två personer som flugit drönare i ett restriktionsområde på Gärdet i centrala Stockholm. De misstänks för brott mot luftfartslagen. Området rymmer flera försvarsmyndigheter, bland annat Försvarsmaktens högkvarter på Lidingövägen och Försvarets materielverk på Banérgatan. Stora delar av Gärdet är markerade som restriktionszoner (R-områden) enligt LFV:s drönarkarta, vilket innebär att drönarflygning kräver särskilt tillstånd.",
+  "url": "https://www.aftonbladet.se/nyheter/a/Rr77qd/aftonbladet-direkt?pinnedEntry=1410839",
+  "source": "Aftonbladet / Svensk OSINT (2025)"
+},
   ];
 
   function addEventsToMap(data){
