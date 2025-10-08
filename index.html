@@ -212,17 +212,16 @@ function parseDateRange(str) {
        .replace(/\./g, '-')
        .replace(/\//g, '-');
 
-  // Expandera korta intervall: "YYYY-MM-DD-DD" (eller tidigare "YYYY-MM-DD/DD")
-  // till två fulla datum: "YYYY-MM-DD YYYY-MM-DD"
+  // Expandera korta intervall: "YYYY-MM-DD-DD" -> "YYYY-MM-DD YYYY-MM-DD"
   s = s.replace(/(\d{4}-\d{2}-)(\d{2})-(\d{2})\b/g,
                 (m, ymd, d1, d2) => `${ymd}${d1} ${ymd}${d2}`);
 
-  // Samla alla fulla ISO-datum som nu finns i texten
+  // Plocka ut alla fulla ISO-datum
   const iso = [...s.matchAll(/\b\d{4}-\d{2}-\d{2}\b/g)].map(m => m[0]);
 
-  // Fallbacks: månad/år om inga fulla datum hittas
-  const ym  = s.match(/\b(\d{4})-(\d{2})\b/);
-  const y   = s.match(/\b(\d{4})\b/);
+  // Fallbacks om inga fulla datum hittas
+  const ym = s.match(/\b(\d{4})-(\d{2})\b/);
+  const y  = s.match(/\b(\d{4})\b/);
 
   const spans = [];
   const mkDay = (Y, M, D) => new Date(Date.UTC(+Y, +M - 1, +D, 0, 0, 0));
@@ -264,16 +263,14 @@ function parseDateRange(str) {
   return { start, end };
 }
 
- // === ROBUST DATUMFILTER ===
-// Hanterar enkeldatum (2025-10-05), intervall (2025-09-26–27, 2025-10-02/03)
-// och månad (2025-09). Misslyckade format ignoreras.
-
-
+// === Datumfilter mot "efter" / "före" (inklusive) ===
 function inDateRange(eventDateStr, after, before){
-  const span = parseDateRange(eventDateStr);   // <--- ändra hit
+  const span = parseDateRange(eventDateStr);
   if (!span) return !(after || before);
-  const fs = after  ? new Date(after  + 'T00:00:00Z') : null;
-  const fe = before ? new Date(before + 'T23:59:59Z') : null;
+
+  const fs = after  ? new Date(after  + 'T00:00:00Z') : null; // from start-of-day UTC
+  const fe = before ? new Date(before + 'T23:59:59Z') : null; // to end-of-day UTC
+
   if (fs && span.end   < fs) return false;
   if (fe && span.start > fe) return false;
   return true;
