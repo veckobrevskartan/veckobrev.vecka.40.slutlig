@@ -208,6 +208,7 @@
 //  • Månad:               "2025-09"
 //  • År eller årintervall: "2014 / 2024–2025 bekräftat"
 //  • Flera datum/rader i samma sträng -> union (min start, max slut)
+// === Datumparser (robust, stöd för dag, månad och årintervall) ===
 function parseDateRange(str) {
   if (!str) return null;
   let s = String(str).trim();
@@ -219,54 +220,50 @@ function parseDateRange(str) {
        .replace(/\//g, '-');   // "2025-10-02/03" -> "2025-10-02-03"
 
   // Expandera korta intervall: "YYYY-MM-DD-DD" -> "YYYY-MM-DD YYYY-MM-DD"
-  s = s.replace(/(\d{4}-\d{2}-)(\d{2})-(\d{2})\b/g,
-                (m, ymd, d1, d2) => `${ymd}${d1} ${ymd}${d2}`);
+  s = s.replace(
+    /(\d{4}-\d{2}-)(\d{2})-(\d{2})\b/g,
+    (_, ymd, d1, d2) => `${ymd}${d1} ${ymd}${d2}`
+  );
 
-  // Plocka ut alla fulla ISO-datum efter normalisering/expansion
-  const iso = [...s.matchAll(/\b\d{4}-\d{2}-\d{2}\b/g)].map(m => m[0]);
-
-  // Fallbacks om inga fulla datum hittas
-  const ym = s.match(/\b(\d{4})-(\d{2})\b/); // t.ex. "2025-09"
-  const y  = s.match(/\b(\d{4})\b/);         // t.ex. "2025"
-
-  const spans = [];
+  // Hjälpare för datum
   const mkDay = (Y, M, D) => new Date(Date.UTC(+Y, +M - 1, +D, 0, 0, 0));
   const mkEoD = (Y, M, D) => new Date(Date.UTC(+Y, +M - 1, +D, 23, 59, 59));
 
-  if (iso.length >= 1) {
-    // Om flera datum finns: ta min/max som spann
-    let start = mkDay(...iso[0].split('-'));
-    let end   = mkEoD(...iso[0].split('-'));
-    for (let i = 1; i < iso.length; i++) {
-      const d0 = mkDay(...iso[i].split('-'));
-      const d1 = mkEoD(...iso[i].split('-'));
+  // 1) Hela datum (en eller flera)
+  const dayTokens = [...s.matchAll(/\b(\d{4})-(\d{2})-(\d{2})\b/g)]
+                    .map(m => [+m[1], +m[2], +m[3]]);
+  if (dayTokens.length) {
+    let start = mkDay(...dayTokens[0]);
+    let end   = mkEoD(...dayTokens[0]);
+    for (let i = 1; i < dayTokens.length; i++) {
+      const d0 = mkDay(...dayTokens[i]);
+      const d1 = mkEoD(...dayTokens[i]);
       if (d0 < start) start = d0;
       if (d1 > end)   end   = d1;
     }
-    spans.push({ start, end });
-  } else if (ym) {
-    const Y = +ym[1], M = +ym[2];
+    return { start, end };
+  }
+
+  // 2) Månad (YYYY-MM)
+  const ym = [...s.matchAll(/\b(\d{4})-(\d{2})\b/g)].map(m => [+m[1], +m[2]]);
+  if (ym.length) {
+    const [Y, M] = ym[0];
     const start = new Date(Date.UTC(Y, M - 1, 1, 0, 0, 0));
     const end   = new Date(Date.UTC(Y, M,     0, 23, 59, 59)); // sista dagen i månaden
-    spans.push({ start, end });
-  } else if (y) {
-    const Y = +y[1];
-    if (Y >= 1900 && Y <= 2100) {
-      const start = new Date(Date.UTC(Y,  0,  1, 0, 0, 0));
-      const end   = new Date(Date.UTC(Y, 11, 31, 23, 59, 59));
-      spans.push({ start, end });
-    }
+    return { start, end };
   }
 
-  if (!spans.length) return null;
-
-  // Union om flera spann hittas (minsta start, största slut)
-  let { start, end } = spans[0];
-  for (const r of spans) {
-    if (r.start < start) start = r.start;
-    if (r.end   > end)   end   = r.end;
+  // 3) År eller årintervall (t.ex. "2014 / 2024-2025 bekräftat")
+  const years = [...s.matchAll(/\b(19|20)\d{2}\b/g)].map(m => +m[0]);
+  if (years.length) {
+    const minY = Math.min(...years);
+    const maxY = Math.max(...years);
+    const start = new Date(Date.UTC(minY, 0,  1, 0, 0, 0));
+    const end   = new Date(Date.UTC(maxY, 11, 31, 23, 59, 59));
+    return { start, end };
   }
-  return { start, end };
+
+  return null;
 }
 
 // === Datumfilter mot "efter" / "före" (inklusive) ===
