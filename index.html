@@ -200,33 +200,31 @@
     return `TDP::${(e.title||'').trim()}|${(e.date||'').trim()}|${(e.place||'').trim()}`;
   }
   function eventId(e){ return encodeURIComponent(eventKey(e)); } // robust mot unicode
-
-  // === Datumtolkning och intervall ===
-  // === Datumtolkning och intervall (robust) ===
+ 
+// === Datumtolkning och intervall (robust) ===
 function parseDateRange(str) {
   if (!str) return null;
   let s = String(str).trim();
 
-  // Normalisera: mellanslag, en/em-dash, punkt/slash till bindestreck
+  // Normalisera: mellanslag, en/em-dash, punkt/slash -> bindestreck
   s = s.replace(/\s+/g, ' ')
        .replace(/[–—]/g, '-')
        .replace(/\./g, '-')
        .replace(/\//g, '-');
 
-  // Expandera korta intervall: "YYYY-MM-DD-DD" => "YYYY-MM-DD YYYY-MM-DD"
-  // (matchar även tidigare "YYYY-MM-DD/DD" efter normalisering ovan)
-  s = s.replace(/(\d{4}-\d{2}-)(\d{2})-(\d{2})\b/g, (m, ymd, d1, d2) => `${ymd}${d1} ${ymd}${d2}`);
+  // Expandera korta intervall: "YYYY-MM-DD-DD" (eller tidigare "YYYY-MM-DD/DD")
+  // till två fulla datum: "YYYY-MM-DD YYYY-MM-DD"
+  s = s.replace(/(\d{4}-\d{2}-)(\d{2})-(\d{2})\b/g,
+                (m, ymd, d1, d2) => `${ymd}${d1} ${ymd}${d2}`);
 
   // Samla alla fulla ISO-datum som nu finns i texten
   const iso = [...s.matchAll(/\b\d{4}-\d{2}-\d{2}\b/g)].map(m => m[0]);
 
-  // Dessutom: fånga rena månad/år om inga fulla datum hittas
+  // Fallbacks: månad/år om inga fulla datum hittas
   const ym  = s.match(/\b(\d{4})-(\d{2})\b/);
   const y   = s.match(/\b(\d{4})\b/);
 
   const spans = [];
-
-  // Hjälpare för UTC-datum (stabilt över tidszoner)
   const mkDay = (Y, M, D) => new Date(Date.UTC(+Y, +M - 1, +D, 0, 0, 0));
   const mkEoD = (Y, M, D) => new Date(Date.UTC(+Y, +M - 1, +D, 23, 59, 59));
 
@@ -257,7 +255,7 @@ function parseDateRange(str) {
 
   if (!spans.length) return null;
 
-  // Om flera spann skulle hittas: union (min start, max end)
+  // Union om flera spann hittas
   let { start, end } = spans[0];
   for (const r of spans) {
     if (r.start < start) start = r.start;
@@ -269,35 +267,10 @@ function parseDateRange(str) {
  // === ROBUST DATUMFILTER ===
 // Hanterar enkeldatum (2025-10-05), intervall (2025-09-26–27, 2025-10-02/03)
 // och månad (2025-09). Misslyckade format ignoreras.
-function parseDateSpan(raw){
-  if (!raw) return null;
-  let s = String(raw).trim();
-  s = s.replace(/\s+/g, ' ').replace(/–/g, '-');
-  s = s.replace(/(\d{4}-\d{2}-)(\d{2})[\/-](\d{2})\b/, (m, ymd, d1, d2) => `${ymd}${d1}/${ymd}${d2}`);
-  const isoDays = [...s.matchAll(/\d{4}-\d{2}-\d{2}/g)].map(m => m[0]);
-  if (isoDays.length >= 2){
-    return {
-      start: new Date(isoDays[0] + 'T00:00:00Z'),
-      end:   new Date(isoDays[1] + 'T23:59:59Z'),
-    };
-  }
-  if (isoDays.length === 1){
-    const d = new Date(isoDays[0] + 'T00:00:00Z');
-    const e = new Date(isoDays[0] + 'T23:59:59Z');
-    return { start: d, end: e };
-  }
-  const ym = s.match(/\b(\d{4})-(\d{2})\b/);
-  if (ym){
-    const y = +ym[1], m = +ym[2];
-    const start = new Date(Date.UTC(y, m-1, 1, 0,0,0));
-    const end   = new Date(Date.UTC(y, m,   0, 23,59,59));
-    return { start, end };
-  }
-  return null;
-}
+
 
 function inDateRange(eventDateStr, after, before){
-  const span = parseDateSpan(eventDateStr);
+  const span = parseDateRange(eventDateStr);   // <--- ändra hit
   if (!span) return !(after || before);
   const fs = after  ? new Date(after  + 'T00:00:00Z') : null;
   const fe = before ? new Date(before + 'T23:59:59Z') : null;
@@ -305,7 +278,6 @@ function inDateRange(eventDateStr, after, before){
   if (fe && span.start > fe) return false;
   return true;
 }
-
 
   // === Popup + kopiera ===
   function catLabel(e){ const meta = CATS[e.cat]; return meta ? meta.label : (e.cat || 'Okänd kategori'); }
