@@ -242,22 +242,46 @@
     return { start, end };
   }
 
-  function inDateRange(dateText, after, before) {
-    if (!after && !before) return true;
-    const ev = parseDateRange(dateText);
-    if (!ev) return false;
-
-    const A = after  ? new Date(after)  : null;
-    const B = before ? new Date(before) : null;
-
-    if (A && isNaN(A)) return true;
-    if (B && isNaN(B)) return true;
-
-    const start = ev.start, end = ev.end;
-    if (A && end   < A) return false;
-    if (B && start > B) return false;
-    return true;
+ // === ROBUST DATUMFILTER ===
+// Hanterar enkeldatum (2025-10-05), intervall (2025-09-26–27, 2025-10-02/03)
+// och månad (2025-09). Misslyckade format ignoreras.
+function parseDateSpan(raw){
+  if (!raw) return null;
+  let s = String(raw).trim();
+  s = s.replace(/\s+/g, ' ').replace(/–/g, '-');
+  s = s.replace(/(\d{4}-\d{2}-)(\d{2})[\/-](\d{2})\b/, (m, ymd, d1, d2) => `${ymd}${d1}/${ymd}${d2}`);
+  const isoDays = [...s.matchAll(/\d{4}-\d{2}-\d{2}/g)].map(m => m[0]);
+  if (isoDays.length >= 2){
+    return {
+      start: new Date(isoDays[0] + 'T00:00:00Z'),
+      end:   new Date(isoDays[1] + 'T23:59:59Z'),
+    };
   }
+  if (isoDays.length === 1){
+    const d = new Date(isoDays[0] + 'T00:00:00Z');
+    const e = new Date(isoDays[0] + 'T23:59:59Z');
+    return { start: d, end: e };
+  }
+  const ym = s.match(/\b(\d{4})-(\d{2})\b/);
+  if (ym){
+    const y = +ym[1], m = +ym[2];
+    const start = new Date(Date.UTC(y, m-1, 1, 0,0,0));
+    const end   = new Date(Date.UTC(y, m,   0, 23,59,59));
+    return { start, end };
+  }
+  return null;
+}
+
+function inDateRange(eventDateStr, after, before){
+  const span = parseDateSpan(eventDateStr);
+  if (!span) return !(after || before);
+  const fs = after  ? new Date(after  + 'T00:00:00Z') : null;
+  const fe = before ? new Date(before + 'T23:59:59Z') : null;
+  if (fs && span.end   < fs) return false;
+  if (fe && span.start > fe) return false;
+  return true;
+}
+
 
   // === Popup + kopiera ===
   function catLabel(e){ const meta = CATS[e.cat]; return meta ? meta.label : (e.cat || 'Okänd kategori'); }
