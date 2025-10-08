@@ -202,45 +202,69 @@
   function eventId(e){ return encodeURIComponent(eventKey(e)); } // robust mot unicode
 
   // === Datumtolkning och intervall ===
-  function parseDateRange(str) {
-    if (!str) return null;
-    const s = String(str);
+  // === Datumtolkning och intervall (robust) ===
+function parseDateRange(str) {
+  if (!str) return null;
+  let s = String(str).trim();
 
-    const reFull = /\b(\d{4})-(\d{2})-(\d{2})\b/g;
-    const reYM   = /\b(\d{4})-(\d{2})\b/g;
-    const reY    = /\b(\d{4})\b/g;
+  // Normalisera: mellanslag, en/em-dash, punkt/slash till bindestreck
+  s = s.replace(/\s+/g, ' ')
+       .replace(/[–—]/g, '-')
+       .replace(/\./g, '-')
+       .replace(/\//g, '-');
 
-    const found = [];
+  // Expandera korta intervall: "YYYY-MM-DD-DD" => "YYYY-MM-DD YYYY-MM-DD"
+  // (matchar även tidigare "YYYY-MM-DD/DD" efter normalisering ovan)
+  s = s.replace(/(\d{4}-\d{2}-)(\d{2})-(\d{2})\b/g, (m, ymd, d1, d2) => `${ymd}${d1} ${ymd}${d2}`);
 
-    for (const m of s.matchAll(reFull)) {
-      const d = new Date(`${m[1]}-${m[2]}-${m[3]}`);
-      if (!isNaN(d)) found.push({ start: d, end: d });
-    }
-    for (const m of s.matchAll(reYM)) {
-      const start = new Date(`${m[1]}-${m[2]}-01`);
-      if (!isNaN(start)) {
-        const end = new Date(start);
-        end.setMonth(end.getMonth() + 1, 0);
-        found.push({ start, end });
-      }
-    }
-    for (const m of s.matchAll(reY)) {
-      const year = Number(m[1]);
-      if (year >= 1900 && year <= 2100) {
-        const start = new Date(`${year}-01-01`);
-        const end   = new Date(`${year}-12-31`);
-        found.push({ start, end });
-      }
-    }
-    if (found.length === 0) return null;
+  // Samla alla fulla ISO-datum som nu finns i texten
+  const iso = [...s.matchAll(/\b\d{4}-\d{2}-\d{2}\b/g)].map(m => m[0]);
 
-    let start = found[0].start, end = found[0].end;
-    for (const r of found) {
-      if (r.start < start) start = r.start;
-      if (r.end   > end)   end   = r.end;
+  // Dessutom: fånga rena månad/år om inga fulla datum hittas
+  const ym  = s.match(/\b(\d{4})-(\d{2})\b/);
+  const y   = s.match(/\b(\d{4})\b/);
+
+  const spans = [];
+
+  // Hjälpare för UTC-datum (stabilt över tidszoner)
+  const mkDay = (Y, M, D) => new Date(Date.UTC(+Y, +M - 1, +D, 0, 0, 0));
+  const mkEoD = (Y, M, D) => new Date(Date.UTC(+Y, +M - 1, +D, 23, 59, 59));
+
+  if (iso.length >= 1) {
+    // Om flera datum finns: ta min/max som spann
+    let start = mkDay(...iso[0].split('-'));
+    let end   = mkEoD(...iso[0].split('-'));
+    for (let i = 1; i < iso.length; i++) {
+      const d0 = mkDay(...iso[i].split('-'));
+      const d1 = mkEoD(...iso[i].split('-'));
+      if (d0 < start) start = d0;
+      if (d1 > end)   end   = d1;
     }
-    return { start, end };
+    spans.push({ start, end });
+  } else if (ym) {
+    const Y = +ym[1], M = +ym[2];
+    const start = new Date(Date.UTC(Y, M - 1, 1, 0, 0, 0));
+    const end   = new Date(Date.UTC(Y, M,     0, 23, 59, 59)); // sista dagen i månaden
+    spans.push({ start, end });
+  } else if (y) {
+    const Y = +y[1];
+    if (Y >= 1900 && Y <= 2100) {
+      const start = new Date(Date.UTC(Y, 0,  1, 0, 0, 0));
+      const end   = new Date(Date.UTC(Y, 11, 31, 23, 59, 59));
+      spans.push({ start, end });
+    }
   }
+
+  if (!spans.length) return null;
+
+  // Om flera spann skulle hittas: union (min start, max end)
+  let { start, end } = spans[0];
+  for (const r of spans) {
+    if (r.start < start) start = r.start;
+    if (r.end   > end)   end   = r.end;
+  }
+  return { start, end };
+}
 
  // === ROBUST DATUMFILTER ===
 // Hanterar enkeldatum (2025-10-05), intervall (2025-09-26–27, 2025-10-02/03)
