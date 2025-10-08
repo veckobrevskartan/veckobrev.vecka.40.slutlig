@@ -201,43 +201,35 @@
   }
   function eventId(e){ return encodeURIComponent(eventKey(e)); } // robust mot unicode
  
-// === Datumparser + filter (drop-in) ===
-// Stödjer:
-//  • Enkeldatum:          "2025-10-05"
-//  • Kort intervall:      "2025-09-26–27", "2025-10-02/03" (en/em-dash eller slash)
-//  • Månad:               "2025-09"
-//  • År eller årintervall: "2014 / 2024–2025 bekräftat"
-//  • Flera datum/rader i samma sträng -> union (min start, max slut)
-// === Datumparser (robust, stöd för dag, månad och årintervall) ===
+// === Datumparser + filter (färdig, testad version) ===
+// Hanterar datum som "2025-10-05", "2025-10-02/03", "2025-09-26–27", "2025-09", "2025", "2014 / 2024–2025"
 function parseDateRange(str) {
   if (!str) return null;
   let s = String(str).trim();
 
-  // Normalisera: mellanslag, en/em-dash, punkt/slash -> bindestreck
+  // Normalisering
   s = s.replace(/\s+/g, ' ')
-       .replace(/[–—]/g, '-')  // en/em dash -> '-'
-       .replace(/\./g, '-')    // "2025.09.26" -> "2025-09-26"
-       .replace(/\//g, '-');   // "2025-10-02/03" -> "2025-10-02-03"
+       .replace(/[–—]/g, '-')  // ersätt en/em-dash
+       .replace(/\./g, '-')    // punkt till bindestreck
+       .replace(/\//g, '-');   // snedstreck till bindestreck
 
-  // Expandera korta intervall: "YYYY-MM-DD-DD" -> "YYYY-MM-DD YYYY-MM-DD"
-  s = s.replace(
-    /(\d{4}-\d{2}-)(\d{2})-(\d{2})\b/g,
-    (_, ymd, d1, d2) => `${ymd}${d1} ${ymd}${d2}`
-  );
+  // Om intervall som "2025-10-02-03" -> "2025-10-02 2025-10-03"
+  s = s.replace(/(\d{4}-\d{2}-)(\d{2})-(\d{2})\b/g,
+                (_, ymd, d1, d2) => `${ymd}${d1} ${ymd}${d2}`);
 
-  // Hjälpare för datum
-  const mkDay = (Y, M, D) => new Date(Date.UTC(+Y, +M - 1, +D, 0, 0, 0));
-  const mkEoD = (Y, M, D) => new Date(Date.UTC(+Y, +M - 1, +D, 23, 59, 59));
+  // Hjälpfunktioner
+  const mkDay = (Y, M, D) => new Date(Date.UTC(Y, M - 1, D, 0, 0, 0));
+  const mkEoD = (Y, M, D) => new Date(Date.UTC(Y, M - 1, D, 23, 59, 59));
 
-  // 1) Hela datum (en eller flera)
-  const dayTokens = [...s.matchAll(/\b(\d{4})-(\d{2})-(\d{2})\b/g)]
-                    .map(m => [+m[1], +m[2], +m[3]]);
-  if (dayTokens.length) {
-    let start = mkDay(...dayTokens[0]);
-    let end   = mkEoD(...dayTokens[0]);
-    for (let i = 1; i < dayTokens.length; i++) {
-      const d0 = mkDay(...dayTokens[i]);
-      const d1 = mkEoD(...dayTokens[i]);
+  // 1) Fullständiga datum
+  const days = [...s.matchAll(/\b(\d{4})-(\d{2})-(\d{2})\b/g)]
+                .map(m => [+m[1], +m[2], +m[3]]);
+  if (days.length) {
+    let start = mkDay(...days[0]);
+    let end   = mkEoD(...days[0]);
+    for (let i = 1; i < days.length; i++) {
+      const d0 = mkDay(...days[i]);
+      const d1 = mkEoD(...days[i]);
       if (d0 < start) start = d0;
       if (d1 > end)   end   = d1;
     }
@@ -245,20 +237,20 @@ function parseDateRange(str) {
   }
 
   // 2) Månad (YYYY-MM)
-  const ym = [...s.matchAll(/\b(\d{4})-(\d{2})\b/g)].map(m => [+m[1], +m[2]]);
-  if (ym.length) {
-    const [Y, M] = ym[0];
+  const ym = s.match(/\b(\d{4})-(\d{2})\b/);
+  if (ym) {
+    const Y = +ym[1], M = +ym[2];
     const start = new Date(Date.UTC(Y, M - 1, 1, 0, 0, 0));
-    const end   = new Date(Date.UTC(Y, M,     0, 23, 59, 59)); // sista dagen i månaden
+    const end   = new Date(Date.UTC(Y, M, 0, 23, 59, 59));
     return { start, end };
   }
 
-  // 3) År eller årintervall (t.ex. "2014 / 2024-2025 bekräftat")
+  // 3) År eller årintervall (2014 / 2024–2025)
   const years = [...s.matchAll(/\b(19|20)\d{2}\b/g)].map(m => +m[0]);
   if (years.length) {
     const minY = Math.min(...years);
     const maxY = Math.max(...years);
-    const start = new Date(Date.UTC(minY, 0,  1, 0, 0, 0));
+    const start = new Date(Date.UTC(minY, 0, 1, 0, 0, 0));
     const end   = new Date(Date.UTC(maxY, 11, 31, 23, 59, 59));
     return { start, end };
   }
@@ -266,12 +258,10 @@ function parseDateRange(str) {
   return null;
 }
 
-// === Datumfilter mot "efter" / "före" (inklusive) ===
-// eventDateStr = t.ex. e.date från din datalista
-// after/before = strängar "YYYY-MM-DD" (från UI), kan vara null/"".
-function inDateRange(eventDateStr, after, before){
+// === Datumfilter (inklusive) ===
+function inDateRange(eventDateStr, after, before) {
   const span = parseDateRange(eventDateStr);
-  if (!span) return !(after || before); // om eventet saknar tolkbart datum: visa bara om inga filter satta
+  if (!span) return !(after || before);
 
   const mk = (dstr, endOfDay) => {
     if (!dstr) return null;
@@ -280,14 +270,13 @@ function inDateRange(eventDateStr, after, before){
     return isNaN(d) ? null : d;
   };
 
-  const fs = mk(after, false); // from start-of-day
-  const fe = mk(before, true); // to end-of-day
+  const fs = mk(after, false); // Från
+  const fe = mk(before, true); // Till
 
-  if (fs && span.end   < fs) return false; // event slutar före "efter"-gränsen
-  if (fe && span.start > fe) return false; // event börjar efter "före"-gränsen
+  if (fs && span.end < fs) return false;
+  if (fe && span.start > fe) return false;
   return true;
 }
-
   // === Popup + kopiera ===
   function catLabel(e){ const meta = CATS[e.cat]; return meta ? meta.label : (e.cat || 'Okänd kategori'); }
   function catEmoji(e){ const meta = CATS[e.cat]; return meta ? meta.emoji : '❓'; }
