@@ -1041,23 +1041,29 @@ function inDateRange(dateText, after, before) {
   }
 
   function applyFilter(query){
-    Object.values(clustersByCat).forEach(c => c.clearLayers());
-    const trimmed = (query||'').trim();
-    const items = trimmed ? ALL_ITEMS.filter(it => matches(it.e, trimmed)) : ALL_ITEMS.slice();
+  Object.values(clustersByCat).forEach(c => c.clearLayers());
+  const trimmed  = (query || '').trim();
+  const hasDate  = !!(afterInput.value || beforeInput.value);
+  const shouldFilter = trimmed || hasDate;
 
-    items.forEach(it => (clustersByCat[it.e.cat] || clustersByCat.HYBRID).addLayer(it.marker));
+  const items = shouldFilter
+    ? ALL_ITEMS.filter(it => matches(it.e, trimmed))
+    : ALL_ITEMS.slice();
 
-    hitsEl.textContent = trimmed || afterInput.value || beforeInput.value ? `Träffar: ${items.length}` : '';
-    if (items.length > 0){
-      const fg = L.featureGroup(items.map(it => it.marker));
-      map.fitBounds(fg.getBounds().pad(0.2));
-      if (items.length === 1){
-        setTimeout(() => items[0].marker.openPopup(), 250);
-      }
+  items.forEach(it => (clustersByCat[it.e.cat] || clustersByCat.HYBRID).addLayer(it.marker));
+
+  hitsEl.textContent = (trimmed || afterInput.value || beforeInput.value) ? `Träffar: ${items.length}` : '';
+
+  if (items.length > 0){
+    const fg = L.featureGroup(items.map(it => it.marker));
+    map.fitBounds(fg.getBounds().pad(0.2));
+    if (items.length === 1){
+      setTimeout(() => items[0].marker.openPopup(), 250);
     }
-    renderResults(items, trimmed || afterInput.value || beforeInput.value);
-    return items;
   }
+  renderResults(items, trimmed || afterInput.value || beforeInput.value);
+  return items;
+}
 
   function buildEffectiveQuery(){ return qInput.value || ''; }
   function doSearch(){ applyFilter(buildEffectiveQuery()); }
