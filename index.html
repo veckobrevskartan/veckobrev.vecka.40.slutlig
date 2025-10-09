@@ -201,63 +201,88 @@
   }
   function eventId(e){ return encodeURIComponent(eventKey(e)); } // robust mot unicode
 
-  // === Datumtolkning och intervall ===
-  function parseDateRange(str) {
-    if (!str) return null;
-    const s = String(str);
+// === Normalisera datumtext (stöd för fler format & bindestreck) ===
+function normalizeDateText(str) {
+  return String(str)
+    .replace(/[\u2012\u2013\u2014\u2212]/g, '-')   // olika ”långa” bindestreck → "-"
+    .replace(/[./]/g, '-')                        // "/" eller "." → "-"
+    .replace(/\s+/g, ' ')                         // komprimera whitespace
+    .trim();
+}
+function atStartOfDay(d){ const x = new Date(d); x.setHours(0,0,0,0); return x; }
+function atEndOfDay(d){ const x = new Date(d); x.setHours(23,59,59,999); return x; }
 
-    const reFull = /\b(\d{4})-(\d{2})-(\d{2})\b/g;
-    const reYM   = /\b(\d{4})-(\d{2})\b/g;
-    const reY    = /\b(\d{4})\b/g;
+// === Datumtolkning och intervall (robust) ===
+function parseDateRange(raw) {
+  if (!raw) return null;
+  const s = normalizeDateText(raw);
 
-    const found = [];
-
-    for (const m of s.matchAll(reFull)) {
-      const d = new Date(`${m[1]}-${m[2]}-${m[3]}`);
-      if (!isNaN(d)) found.push({ start: d, end: d });
-    }
-    for (const m of s.matchAll(reYM)) {
-      const start = new Date(`${m[1]}-${m[2]}-01`);
-      if (!isNaN(start)) {
-        const end = new Date(start);
-        end.setMonth(end.getMonth() + 1, 0);
-        found.push({ start, end });
-      }
-    }
-    for (const m of s.matchAll(reY)) {
-      const year = Number(m[1]);
-      if (year >= 1900 && year <= 2100) {
-        const start = new Date(`${year}-01-01`);
-        const end   = new Date(`${year}-12-31`);
-        found.push({ start, end });
-      }
-    }
-    if (found.length === 0) return null;
-
-    let start = found[0].start, end = found[0].end;
-    for (const r of found) {
-      if (r.start < start) start = r.start;
-      if (r.end   > end)   end   = r.end;
-    }
-    return { start, end };
+  // 1) Fullt intervall: YYYY-MM-DD (till|–|-) YYYY[-]MM[-]DD (år på slutdatum valfritt)
+  const reRange = /\b(\d{4})-(\d{2})-(\d{2})\s*(?:till|to|–|—|-)\s*(?:(\d{4})-)?(\d{2})-(\d{2})\b/i;
+  const mR = s.match(reRange);
+  if (mR) {
+    const y1 = +mR[1], m1 = +mR[2], d1 = +mR[3];
+    const y2 = mR[4] ? +mR[4] : y1, m2 = +mR[5], d2 = +mR[6];
+    const start = new Date(`${y1}-${String(m1).padStart(2,'0')}-${String(d1).padStart(2,'0')}`);
+    const end   = new Date(`${y2}-${String(m2).padStart(2,'0')}-${String(d2).padStart(2,'0')}`);
+    if (!isNaN(start) && !isNaN(end)) return { start: atStartOfDay(start), end: atEndOfDay(end) };
   }
 
-  function inDateRange(dateText, after, before) {
-    if (!after && !before) return true;
-    const ev = parseDateRange(dateText);
-    if (!ev) return false;
-
-    const A = after  ? new Date(after)  : null;
-    const B = before ? new Date(before) : null;
-
-    if (A && isNaN(A)) return true;
-    if (B && isNaN(B)) return true;
-
-    const start = ev.start, end = ev.end;
-    if (A && end   < A) return false;
-    if (B && start > B) return false;
-    return true;
+  // 2) Plocka upp alla fulla datum YYYY-MM-DD (stöd för "-", "/", ".")
+  const reFull = /\b(\d{4})-(\d{2})-(\d{2})\b/g;
+  const found = [];
+  for (const m of s.matchAll(reFull)) {
+    const d = new Date(`${m[1]}-${m[2]}-${m[3]}`);
+    if (!isNaN(d)) found.push({ start: atStartOfDay(d), end: atEndOfDay(d) });
   }
+
+  // 3) År-månad (hela månaden)
+  const reYM = /\b(\d{4})-(\d{2})\b/g;
+  for (const m of s.matchAll(reYM)) {
+    const d = new Date(`${m[1]}-${m[2]}-01`);
+    if (!isNaN(d)) {
+      const start = atStartOfDay(d);
+      const end = new Date(d); end.setMonth(end.getMonth()+1, 0); // sista dagen i månaden
+      found.push({ start, end: atEndOfDay(end) });
+    }
+  }
+
+  // 4) Enbart år (hela året)
+  const reY = /\b(\d{4})\b/g;
+  for (const m of s.matchAll(reY)) {
+    const y = +m[1];
+    if (y >= 1900 && y <= 2100) {
+      found.push({
+        start: atStartOfDay(new Date(`${y}-01-01`)),
+        end:   atEndOfDay(new Date(`${y}-12-31`))
+      });
+    }
+  }
+
+  if (!found.length) return null;
+  // Slå ihop: min start, max slut
+  let start = found[0].start, end = found[0].end;
+  for (const r of found) { if (r.start < start) start = r.start; if (r.end > end) end = r.end; }
+  return { start, end };
+}
+
+// === Inkluderande jämförelse mot UI:s after/before ===
+function inDateRange(dateText, after, before) {
+  if (!after && !before) return true;
+  const ev = parseDateRange(dateText);
+  if (!ev) return false;
+
+  const A = after  ? atStartOfDay(new Date(after))  : null;  // inklusivt från
+  const B = before ? atEndOfDay(new Date(before))   : null;  // inklusivt till
+
+  if (A && isNaN(A)) return true;   // skydd: om användaren råkat skriva ogiltigt
+  if (B && isNaN(B)) return true;
+
+  // träff om intervallen överlappar (inklusive kanter)
+  if (A && ev.end   < A) return false;
+  if (B && ev.start > B) return false;
+  return true;
+}
 
   // === Popup + kopiera ===
   function catLabel(e){ const meta = CATS[e.cat]; return meta ? meta.label : (e.cat || 'Okänd kategori'); }
