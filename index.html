@@ -1040,19 +1040,24 @@ function inDateRange(dateText, after, before) {
     resBox.style.display = 'block';
   }
 
-  function applyFilter(query){
+ function applyFilter(query){
   Object.values(clustersByCat).forEach(c => c.clearLayers());
-  const trimmed  = (query || '').trim();
-  const hasDate  = !!(afterInput.value || beforeInput.value);
+
+  // === Nya rader ===
+  const trimmed   = (query || '').trim();
+  const after     = afterInput.value;
+  const before    = beforeInput.value;
+  const hasDate   = !!(after || before);
   const shouldFilter = trimmed || hasDate;
 
+  // === Viktig ändring: matches får nu after & before ===
   const items = shouldFilter
-    ? ALL_ITEMS.filter(it => matches(it.e, trimmed))
+    ? ALL_ITEMS.filter(it => matches(it.e, trimmed, after, before))
     : ALL_ITEMS.slice();
 
   items.forEach(it => (clustersByCat[it.e.cat] || clustersByCat.HYBRID).addLayer(it.marker));
 
-  hitsEl.textContent = (trimmed || afterInput.value || beforeInput.value) ? `Träffar: ${items.length}` : '';
+  hitsEl.textContent = (trimmed || after || before) ? `Träffar: ${items.length}` : '';
 
   if (items.length > 0){
     const fg = L.featureGroup(items.map(it => it.marker));
@@ -1061,7 +1066,7 @@ function inDateRange(dateText, after, before) {
       setTimeout(() => items[0].marker.openPopup(), 250);
     }
   }
-  renderResults(items, trimmed || afterInput.value || beforeInput.value);
+  renderResults(items, trimmed || after || before);
   return items;
 }
 
