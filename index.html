@@ -3,37 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Händelseöversikt - Hybrid & Säkerhet</title>
+    <title>Händelseöversikt</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet" type="text/css" />
     
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; padding: 20px; color: #333; margin: 0; }
-        .container { max-width: 1200px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        
+        /* BREDDNING: Nu tar containern upp 98% av skärmen för att göra tidslinjen så lång som möjligt */
+        .container { 
+            max-width: 98%; 
+            margin: 0 auto; 
+            background: #fff; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+        }
+        
         h2 { text-align: center; color: #2c3e50; margin-bottom: 30px;}
 
         /* Filter */
-        .filters { 
-            margin-bottom: 20px; 
-            padding: 15px; 
+        .controls {
             background: #f8f9fa; 
-            border-radius: 8px; 
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .filter-actions {
+            margin-bottom: 15px;
+        }
+
+        .toggle-btn {
+            background-color: #2c3e50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+        .toggle-btn:hover { background-color: #34495e; }
+
+        .filters { 
             display: flex; 
             flex-wrap: wrap; 
             gap: 10px; 
             justify-content: center;
-            border: 1px solid #e9ecef;
         }
+        
         .filters label { 
             cursor: pointer; 
             font-size: 0.9rem; 
             background: #fff; 
-            padding: 5px 10px; 
+            padding: 5px 12px; 
             border-radius: 20px; 
             border: 1px solid #ddd;
             display: flex;
             align-items: center;
             transition: all 0.2s;
+            user-select: none;
         }
         .filters label:hover { background: #eee; }
         .filters input { margin-right: 8px; }
@@ -41,7 +73,7 @@
         /* Tidslinje */
         #visualization { margin-bottom: 40px; border: 1px solid #ddd; border-radius: 4px; background: white;}
 
-        /* Lista (Feed) */
+        /* Lista (Feed) - Behåller denna lite smalare för läsbarhetens skull */
         .feed-container { max-width: 900px; margin: 0 auto; }
         
         .feed-item { 
@@ -66,7 +98,6 @@
         summary::-webkit-details-marker { display: none; }
         summary:hover { background: #f8f9fa; }
         
-        /* Indikator för öppen/stängd */
         summary::after { content: '+'; font-size: 1.5em; color: #aaa; font-weight: 300; }
         details[open] summary::after { content: '-'; }
 
@@ -91,7 +122,7 @@
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-left: auto; /* Putta till höger */
+            margin-left: auto; 
             margin-right: 10px;
         }
         
@@ -111,7 +142,12 @@
 <div class="container">
     <h2>Omvärldsbevakning: Händelser & Tidslinje</h2>
 
-    <div class="filters" id="filter-container"></div>
+    <div class="controls">
+        <div class="filter-actions">
+            <button class="toggle-btn" onclick="toggleAllFilters()">Markera alla / Avmarkera alla</button>
+        </div>
+        <div class="filters" id="filter-container"></div>
+    </div>
 
     <div id="visualization"></div>
 
@@ -120,11 +156,14 @@
 
 <script>
     // ==========================================================
-    //  1. DIN DATA (Rättad syntax och struktur)
+    //  1. DIN DATA
     // ==========================================================
     
-    const myEvents = [
-     {country:'SE',cat:'HYBRID',title:'Misstänkta konton söker drönarpiloter i forum',place:'Sverige (online)',date:'2025-10-05',lat:59.334,lng:18.067,summary:'Nya, misstänkta Facebook-konton erbjuder betalning för flygningar nära skyddsobjekt, och de verkar veta vilka de ska rikta in sig på. Administratörer tar bort profiler varje vecka.',url:'https://www.sverigesradio.se/artikel/dronarpiloter-soks-upp-pa-facebook-for-att-spana-pa-skyddsobjekt',source:'Sveriges Radio (2025)'},
+    // Lista över kategorier vi INTE vill visa (tar bort dem helt)
+    const blacklistedCategories = ['CYBER', 'THREAT', 'CRIME'];
+
+    const rawEvents = [
+ {country:'SE',cat:'HYBRID',title:'Misstänkta konton söker drönarpiloter i forum',place:'Sverige (online)',date:'2025-10-05',lat:59.334,lng:18.067,summary:'Nya, misstänkta Facebook-konton erbjuder betalning för flygningar nära skyddsobjekt, och de verkar veta vilka de ska rikta in sig på. Administratörer tar bort profiler varje vecka.',url:'https://www.sverigesradio.se/artikel/dronarpiloter-soks-upp-pa-facebook-for-att-spana-pa-skyddsobjekt',source:'Sveriges Radio (2025)'},
   {country:'SE',cat:'NUCLEAR',title:'Ryskt uranfartyg med motorhaveri utanför Blekinge',place:'31 km SO om Hasslö, Blekinge (SE)',date:'2025-09-29',lat:56.118,lng:15.585,summary:'Panamaflaggade Mikhail Dudin ligger för ankar efter motorhaveri; tidigare urantransporter till Seversk. Kustbevakning/Marinen informerade.',url:'https://www.sydostran.se/nyheter/ryskt-fartyg-med-motorhaveri-utanfor-blekinge-anvands-for-att-frakta-uran/',source:'Hultgren, 2025 / Sydöstran'},
   {country:'SE',cat:'DRONE',title:'Drönarlarm vid Ronneby flygplats',place:'Ronneby Airport (SE)',date:'2025-09-29',lat:56.266,lng:15.265,summary:'Misstänkt drönare. Plan vände mot Kalmar innan landning i Ronneby. Civil/militär flygplats (F 17).',url:'https://www.expressen.se/nyheter/expressen-direkt/?post=1ddb8d7c-0474-4d53-af33-f0cc6c69a7ed',source:'Expressen Direkt (2025)'},
   {country:'SE',cat:'DRONE',title:'Drönare stoppade flygtrafik i Sundsvall (Polisen)',place:'Sundsvall–Timrå Airport (SE)',date:'2025-09-28',lat:62.529,lng:17.444,summary:'Drönare i förbudszon. Ett plan fick vänta ~40 min. En man greps (vårdslöshet i flygtrafik m.m.).',url:'https://polisen.se/aktuellt/handelser/2025/september/29/29-september-07.14-sammanfattning-natt-vasternorrlands-lan/',source:'Polisen (2025-09-29)'},
@@ -2009,12 +2048,15 @@
 
 {country:'IT',cat:'HYBRID',title:'Polis stoppar propalestinska försök att störa OS-facklans start i Rom',place:'Stadio dei Marmi, Rom (IT)',date:'2025-12-06',lat:41.9344,lng:12.4547,summary:'Italiensk polis stoppade flera propalestinska grupper som försökte störa starten av OS-fackelstafetten Milano–Cortina 2026. Två grupper hindrades från att nå rutten och en tredje övervakades vid La Sapienza. Mindre konfrontationer avbröts snabbt.',url:'https://www.linkedin.com/posts/svensk-osint_pro-palestinian-activists-stopped-from-disrupting-activity-7403475296391401472-_PKN',source:'AP / Reuters / Ground News / Arab News (2025)'},
 
-{country:'SE',cat:'INFRA',title:'Man anhållen för olovlig avbildning av skyddsobjekt vid Nackamasterna',place:'Nackamasterna, Källtorpssjön (SE)',date:'2025-12-07',lat:59.28553,lng:18.23629,summary:'En man anhölls efter att ha avbildat Nackamasterna, ett skyddsobjekt i det svenska radio- och tv-nätet. Ärendet gäller olovlig avbildning enligt skyddslagen. Medier uppger att mannen är rysk medborgare och misstänks för sabotageplaner, vilket inte bekräftats officiellt.',url:'https://www.linkedin.com/posts/svensk-osint_avbildade-nackamasterna-man-anhållen-activity-7403861602426404864-ZHvW',source:'Åklagarmyndigheten / Aftonbladet / Nyheter24 / SVT / Omni (2025)'},    
-      
+{country:'SE',cat:'INFRA',title:'Man anhållen för olovlig avbildning av skyddsobjekt vid Nackamasterna',place:'Nackamasterna, Källtorpssjön (SE)',date:'2025-12-07',lat:59.28553,lng:18.23629,summary:'En man anhölls efter att ha avbildat Nackamasterna, ett skyddsobjekt i det svenska radio- och tv-nätet. Ärendet gäller olovlig avbildning enligt skyddslagen. Medier uppger att mannen är rysk medborgare och misstänks för sabotageplaner, vilket inte bekräftats officiellt.',url:'https://www.linkedin.com/posts/svensk-osint_avbildade-nackamasterna-man-anhållen-activity-7403861602426404864-ZHvW',source:'Åklagarmyndigheten / Aftonbladet / Nyheter24 / SVT / Omni (2025)'},
     ];
 
+    // Filtrera bort de oönskade kategorierna direkt
+    const myEvents = rawEvents.filter(item => !blacklistedCategories.includes(item.cat));
+
+
     // ==========================================================
-    //  2. LOGIK (Uppdaterad för att läsa dina engelska fält)
+    //  2. LOGIK
     // ==========================================================
 
     function stringToColor(str) {
@@ -2026,8 +2068,8 @@
         return '#' + '00000'.substring(0, 6 - c.length) + c;
     }
 
-    // Mappning till dina fältnamn: "cat" istället för "kategori"
-    const uniqueCategories = [...new Set(myEvents.map(e => e.cat))];
+    // Hämta unika kategorier från den filtrerade listan
+    const uniqueCategories = [...new Set(myEvents.map(e => e.cat))].sort();
     let activeCategories = new Set(uniqueCategories);
 
     const categoryColors = {};
@@ -2039,31 +2081,47 @@
     const filterContainer = document.getElementById('filter-container');
     const timelineContainer = document.getElementById('visualization');
 
-    // -- SKAPA FILTER --
-    uniqueCategories.forEach(cat => {
-        const label = document.createElement('label');
-        label.style.borderColor = categoryColors[cat]; // Kantfärg
-        
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.checked = true;
-        checkbox.value = cat;
-        
-        checkbox.addEventListener('change', (e) => {
-            if (e.target.checked) activeCategories.add(cat);
-            else activeCategories.delete(cat);
-            renderAll();
-        });
+    // -- SKAPA FILTER & KNAPP --
+    function createFilters() {
+        filterContainer.innerHTML = ''; // Rensa
+        uniqueCategories.forEach(cat => {
+            const label = document.createElement('label');
+            label.style.borderColor = categoryColors[cat]; 
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = activeCategories.has(cat);
+            checkbox.value = cat;
+            
+            checkbox.addEventListener('change', (e) => {
+                if (e.target.checked) activeCategories.add(cat);
+                else activeCategories.delete(cat);
+                renderAll();
+            });
 
-        label.appendChild(checkbox);
-        const span = document.createElement('span');
-        span.innerText = cat;
-        span.style.color = categoryColors[cat]; // Textfärg
-        span.style.fontWeight = "bold";
-        label.appendChild(span);
-        
-        filterContainer.appendChild(label);
-    });
+            label.appendChild(checkbox);
+            const span = document.createElement('span');
+            span.innerText = cat;
+            span.style.color = categoryColors[cat];
+            span.style.fontWeight = "bold";
+            label.appendChild(span);
+            
+            filterContainer.appendChild(label);
+        });
+    }
+
+    // Funktion för knappen "Markera/Avmarkera alla"
+    function toggleAllFilters() {
+        if (activeCategories.size === uniqueCategories.length) {
+            // Om alla är valda -> Avmarkera alla
+            activeCategories.clear();
+        } else {
+            // Annars -> Markera alla
+            activeCategories = new Set(uniqueCategories);
+        }
+        createFilters(); // Rita om checkboxarna så de visar rätt status
+        renderAll();     // Uppdatera tidslinje och lista
+    }
 
     // -- INITIERA TIDSLINJE --
     let timeline;
@@ -2071,25 +2129,26 @@
     let timelineGroups = new vis.DataSet([]);
 
     function initTimeline() {
+        // Skapa grupper för alla kategorier
         const groups = uniqueCategories.map(cat => ({
             id: cat,
             content: cat,
-            style: `border-left: 5px solid ${categoryColors[cat]};`
+            style: `border-left: 5px solid ${categoryColors[cat]}; font-weight:bold;`
         }));
         timelineGroups.add(groups);
 
         const options = {
-            height: '400px',
+            height: '500px', // Lite högre för att få plats med allt
             stack: true,
             zoomMin: 1000 * 60 * 60 * 24 * 1, // 1 dag
-            zoomMax: 1000 * 60 * 60 * 24 * 365, // 1 år
-            start: '2025-09-01', // Sätter startdatum så det passar din data
-            end: '2025-11-01'
+            zoomMax: 1000 * 60 * 60 * 24 * 365 * 2, // 2 år
+            start: '2025-08-01', 
+            end: '2025-12-01',
+            margin: { item: 10, axis: 5 }
         };
 
         timeline = new vis.Timeline(timelineContainer, timelineData, timelineGroups, options);
         
-        // Klick-händelse i tidslinjen (scrolla till element i listan)
         timeline.on('select', function (properties) {
             if(properties.items.length > 0) {
                 const itemId = properties.items[0];
@@ -2106,28 +2165,32 @@
     function renderAll() {
         feedContainer.innerHTML = '';
         
-        // Mappning: Filtrera på 'cat'
+        // 1. Filtrera listan baserat på checkboxar
         const filtered = myEvents.filter(item => activeCategories.has(item.cat));
 
-        // Tidslinje data (Mappning: cat, date, title, summary)
+        // 2. Uppdatera Tidslinje-data
         timelineData.clear();
         const timelineItems = filtered.map((item, index) => ({
             id: index,
             group: item.cat, 
             start: item.date,
-            content: item.title,
-            title: `<div style="max-width:200px;"><b>${item.title}</b><br>${item.summary}</div>`, // Tooltip
-            style: `background-color: ${categoryColors[item.cat]}; color: white; border:none; border-radius: 3px;`
+            content: `<span style="color:${categoryColors[item.cat]}">●</span> ${item.title.substring(0, 30)}...`, // Kort titel i tidslinjen
+            title: `<div style="max-width:250px;"><b>${item.title}</b><br><br>${item.summary}</div>`, // Tooltip
+            style: `background-color: white; border: 1px solid ${categoryColors[item.cat]}; border-left: 5px solid ${categoryColors[item.cat]}; color: #333; border-radius: 3px;`
         }));
         timelineData.add(timelineItems);
 
-        // Feed data (Sortera på 'date' fallande)
+        // Visa bara relevanta grupper i tidslinjen (dölj tomma rader om man avmarkerar)
+        // Vi använder en inbyggd vis.js-metod för att filtrera grupper, eller så låter vi dem vara kvar men tomma.
+        // För tydlighetens skull låter vi grupperna vara kvar så man ser strukturen.
+
+        // 3. Uppdatera Listan (Feed)
         const sortedList = filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
 
         sortedList.forEach((item, index) => {
             const details = document.createElement('details');
             details.className = 'feed-item';
-            details.id = `item-${index}`; // ID för länkning från tidslinjen
+            details.id = `item-${index}`; 
             details.style.borderLeft = `6px solid ${categoryColors[item.cat]}`;
 
             const summary = document.createElement('summary');
@@ -2142,7 +2205,6 @@
             const content = document.createElement('div');
             content.className = 'content';
             
-            // Bygger innehållet
             let htmlContent = `<p><b>Plats:</b> ${item.place} (${item.country})</p>`;
             htmlContent += `<p>${item.summary}</p>`;
             if(item.source) htmlContent += `<p style="font-size:0.9em; color:#666;">Källa: ${item.source}</p>`;
@@ -2156,6 +2218,8 @@
         });
     }
 
+    // Kör igång
+    createFilters();
     initTimeline();
     renderAll();
 
