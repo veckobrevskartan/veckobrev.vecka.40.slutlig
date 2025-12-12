@@ -18,7 +18,7 @@
             --primary-btn-hover: #34495e;
         }
 
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-color); padding: 20px; color: var(--text-color); margin: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-color); padding: 20px; color: var(--text-color); margin: 0; overflow-y: scroll; }
         
         /* Huvudcontainer */
         .app-container {
@@ -28,8 +28,7 @@
             transition: all 0.3s ease;
         }
 
-        /* --- HELSKÄRMSLÄGE CSS --- */
-        /* När denna klass läggs på containern ändras layouten drastiskt */
+        /* --- HELSKÄRMSLÄGE --- */
         .app-container.fullscreen-mode {
             position: fixed;
             top: 0;
@@ -39,38 +38,39 @@
             padding: 0;
             margin: 0;
             background: var(--card-bg);
-            z-index: 9999;
+            z-index: 99999;
             box-sizing: border-box;
-            display: flex;       /* Använd Flexbox för att styra höjden */
+            display: flex;       
             flex-direction: column;
+            overflow: hidden; /* Förhindra dubbla scrollbars */
         }
 
-        /* Dölj den nedre sektionen (Listan & Legenden) helt i helskärm */
+        /* Dölj rubrik och nedre sektion i helskärm */
+        .app-container.fullscreen-mode h2,
         .app-container.fullscreen-mode .bottom-section {
             display: none !important;
         }
 
-        /* Anpassa den övre sektionen (Tidslinjen) i helskärm */
+        /* Anpassa övre sektionen i helskärm */
         .app-container.fullscreen-mode .top-section {
-            height: 100%;       /* Ta upp hela höjden */
+            height: 100%;
             margin: 0;
             border: none;
             border-radius: 0;
             display: flex;
             flex-direction: column;
-            padding: 10px 20px;
-            box-sizing: border-box;
+            padding: 10px;
+            box-shadow: none;
         }
 
-        /* Gör att tidslinje-diven fyller ut allt utrymme som blir över */
+        /* Tidslinjen i helskärm */
         .app-container.fullscreen-mode #visualization {
-            flex-grow: 1;
-            height: auto !important; /* Viktigt! Låter flexbox styra höjden */
+            flex-grow: 1; /* Ta all plats som blir över */
             border: none;
+            width: 100%;
         }
 
         /* --- STANDARD STYLING --- */
-
         .top-section {
             background: var(--card-bg);
             padding: 20px;
@@ -86,9 +86,10 @@
             align-items: center;
             gap: 15px;
             margin-bottom: 20px;
+            /* Lägg till en ID eller klass för att kunna mäta höjden i JS */
+            flex-shrink: 0; 
         }
 
-        /* Sökruta */
         .search-wrapper { width: 100%; max-width: 600px; position: relative; }
         .search-wrapper input {
             width: 100%; padding: 10px 15px 10px 40px; border: 1px solid #ccc;
@@ -117,9 +118,7 @@
 
         #visualization { border: 1px solid var(--border-color); border-radius: 4px; background: white; }
 
-        .bottom-section {
-            display: grid; grid-template-columns: 260px 1fr; gap: 20px; align-items: start;
-        }
+        .bottom-section { display: grid; grid-template-columns: 260px 1fr; gap: 20px; align-items: start; }
 
         .sidebar {
             background: var(--card-bg); padding: 15px; border-radius: 8px;
@@ -139,7 +138,6 @@
             border-radius: 6px; overflow: hidden; scroll-margin-top: 20px; 
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        
         .highlight-item { border: 2px solid var(--primary-btn) !important; box-shadow: 0 0 15px rgba(44, 62, 80, 0.2); transform: scale(1.01); transition: all 0.3s; }
         
         summary { padding: 12px 15px; background: #fff; cursor: pointer; display: flex; justify-content: space-between; align-items: center; list-style: none; }
@@ -168,9 +166,9 @@
 <div class="app-container" id="main-container">
     
     <section class="top-section">
-        <h2 style="text-align:center; margin-top:0; color:#2c3e50; margin-bottom:15px;">Omvärldsbevakning: Händelser & Tidslinje</h2>
+        <h2 style="text-align:center; margin-top:0; color:#2c3e50; margin-bottom:15px;">Svensk OSINT Omvärldsbevakning: Händelser & Tidslinje</h2>
 
-        <div class="controls">
+        <div class="controls" id="controls-panel">
             <div class="search-wrapper">
                 <i class="fas fa-search search-icon"></i>
                 <input type="text" id="search-input" placeholder="Sök händelse, plats, innehåll..." oninput="handleSearch()">
@@ -207,7 +205,6 @@
     // ==========================================================
     //  1. KONFIGURATION
     // ==========================================================
-    
     const blacklistedCategories = ['CYBER', 'THREAT', 'CRIME'];
 
     const categoryConfig = {
@@ -229,9 +226,8 @@
     // ==========================================================
     //  2. DATA
     // ==========================================================
-
     const rawEvents = [
-  {country:'SE',cat:'HYBRID',title:'Misstänkta konton söker drönarpiloter i forum',place:'Sverige (online)',date:'2025-10-05',lat:59.334,lng:18.067,summary:'Nya, misstänkta Facebook-konton erbjuder betalning för flygningar nära skyddsobjekt, och de verkar veta vilka de ska rikta in sig på. Administratörer tar bort profiler varje vecka.',url:'https://www.sverigesradio.se/artikel/dronarpiloter-soks-upp-pa-facebook-for-att-spana-pa-skyddsobjekt',source:'Sveriges Radio (2025)'},
+ {country:'SE',cat:'HYBRID',title:'Misstänkta konton söker drönarpiloter i forum',place:'Sverige (online)',date:'2025-10-05',lat:59.334,lng:18.067,summary:'Nya, misstänkta Facebook-konton erbjuder betalning för flygningar nära skyddsobjekt, och de verkar veta vilka de ska rikta in sig på. Administratörer tar bort profiler varje vecka.',url:'https://www.sverigesradio.se/artikel/dronarpiloter-soks-upp-pa-facebook-for-att-spana-pa-skyddsobjekt',source:'Sveriges Radio (2025)'},
   {country:'SE',cat:'NUCLEAR',title:'Ryskt uranfartyg med motorhaveri utanför Blekinge',place:'31 km SO om Hasslö, Blekinge (SE)',date:'2025-09-29',lat:56.118,lng:15.585,summary:'Panamaflaggade Mikhail Dudin ligger för ankar efter motorhaveri; tidigare urantransporter till Seversk. Kustbevakning/Marinen informerade.',url:'https://www.sydostran.se/nyheter/ryskt-fartyg-med-motorhaveri-utanfor-blekinge-anvands-for-att-frakta-uran/',source:'Hultgren, 2025 / Sydöstran'},
   {country:'SE',cat:'DRONE',title:'Drönarlarm vid Ronneby flygplats',place:'Ronneby Airport (SE)',date:'2025-09-29',lat:56.266,lng:15.265,summary:'Misstänkt drönare. Plan vände mot Kalmar innan landning i Ronneby. Civil/militär flygplats (F 17).',url:'https://www.expressen.se/nyheter/expressen-direkt/?post=1ddb8d7c-0474-4d53-af33-f0cc6c69a7ed',source:'Expressen Direkt (2025)'},
   {country:'SE',cat:'DRONE',title:'Drönare stoppade flygtrafik i Sundsvall (Polisen)',place:'Sundsvall–Timrå Airport (SE)',date:'2025-09-28',lat:62.529,lng:17.444,summary:'Drönare i förbudszon. Ett plan fick vänta ~40 min. En man greps (vårdslöshet i flygtrafik m.m.).',url:'https://polisen.se/aktuellt/handelser/2025/september/29/29-september-07.14-sammanfattning-natt-vasternorrlands-lan/',source:'Polisen (2025-09-29)'},
@@ -2143,16 +2139,12 @@
         .filter(item => !blacklistedCategories.includes(item.cat))
         .map((item, index) => ({ ...item, id: index }));
 
-
     // ==========================================================
     //  3. LOGIK
     // ==========================================================
-
     function stringToColor(str) {
         let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            hash = str.charCodeAt(i) + ((hash << 5) - hash);
-        }
+        for (let i = 0; i < str.length; i++) { hash = str.charCodeAt(i) + ((hash << 5) - hash); }
         const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
         return '#' + '00000'.substring(0, 6 - c.length) + c;
     }
@@ -2175,23 +2167,19 @@
         return categoryConfig[catCode] || { ...defaultCatConfig, label: catCode };
     }
 
-    // -- SÖK --
     function handleSearch() {
         const input = document.getElementById('search-input');
         currentSearchTerm = input.value.toLowerCase().trim();
         renderAll();
     }
 
-    // -- SKAPA TECKENFÖRKLARING --
     function createLegend() {
         legendContainer.innerHTML = '';
         uniqueCategories.forEach(cat => {
             const info = getCatInfo(cat);
             const color = categoryColors[cat];
-
             const itemDiv = document.createElement('div');
             itemDiv.className = 'legend-item';
-            
             itemDiv.innerHTML = `
                 <div class="legend-icon" style="color:${color}"><i class="fas ${info.icon}"></i></div>
                 <div class="legend-text">
@@ -2203,32 +2191,26 @@
         });
     }
 
-    // -- SKAPA FILTERKNAPPAR --
     function createFilters() {
         filterContainer.innerHTML = ''; 
         uniqueCategories.forEach(cat => {
             const info = getCatInfo(cat);
             const label = document.createElement('label');
             label.style.borderColor = categoryColors[cat]; 
-            
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.checked = activeCategories.has(cat);
             checkbox.value = cat;
-            
             checkbox.addEventListener('change', (e) => {
                 if (e.target.checked) activeCategories.add(cat);
                 else activeCategories.delete(cat);
                 renderAll();
             });
-
             label.appendChild(checkbox);
-            
             const span = document.createElement('span');
             span.innerHTML = `<i class="fas ${info.icon}" style="color:${categoryColors[cat]}; margin-right:5px;"></i> ${info.label}`;
             span.style.color = "#333";
             span.style.fontWeight = "600";
-            
             label.appendChild(span);
             filterContainer.appendChild(label);
         });
@@ -2244,7 +2226,7 @@
         renderAll();
     }
 
-    // -- HELSKÄRMSLOGIK (Uppdaterad för att dölja nedre delen) --
+    // -- HELSKÄRMSLOGIK (FIXAD HÖJD) --
     function enterFullscreen() {
         if (mainContainer.requestFullscreen) mainContainer.requestFullscreen();
         else if (mainContainer.webkitRequestFullscreen) mainContainer.webkitRequestFullscreen();
@@ -2254,12 +2236,17 @@
         document.getElementById('open-fs-btn').style.display = 'none';
         document.getElementById('close-fs-btn').style.display = 'flex';
         
-        // Uppdatera tidslinjen så den ritas om i ny storlek
-        if(timeline) {
-            // Låt tidslinjen fylla tillgängligt utrymme (flex-grow)
-            // Vi sätter ingen fast höjd, CSS sköter det nu med flex
-            timeline.redraw();
-        }
+        // Räkna ut höjd dynamiskt för att fylla skärmen
+        // Total höjd - Höjd på filter/knappar - lite marginal
+        setTimeout(() => {
+            const controlsHeight = document.getElementById('controls-panel').offsetHeight;
+            const windowHeight = window.innerHeight;
+            const availableHeight = windowHeight - controlsHeight - 40; // 40px padding/margin
+            if(timeline) {
+                timeline.setOptions({ height: availableHeight + 'px' });
+                timeline.redraw();
+            }
+        }, 200); // Liten fördröjning för att webbläsaren ska hinna rendera fullscreen
     }
 
     function exitFullscreen() {
@@ -2273,14 +2260,12 @@
             mainContainer.classList.remove('fullscreen-mode');
             document.getElementById('open-fs-btn').style.display = 'flex';
             document.getElementById('close-fs-btn').style.display = 'none';
-            // Återställ tidslinjehöjd till default
             if(timeline) {
-                timeline.setOptions({ height: '500px' });
+                timeline.setOptions({ height: '500px' }); // Tillbaka till normal höjd
             }
         }
     });
 
-    // -- TIDSLINJE SETUP --
     let timeline;
     let timelineData = new vis.DataSet([]);
     let timelineGroups = new vis.DataSet([]);
@@ -2297,7 +2282,7 @@
         timelineGroups.add(groups);
 
         const options = {
-            height: '500px', // Standardhöjd (skrivs över i helskärm av CSS flex)
+            height: '500px', 
             verticalScroll: true, 
             horizontalScroll: true,
             zoomKey: 'ctrlKey',
@@ -2317,10 +2302,8 @@
             if(properties.items.length > 0) {
                 const uniqueId = properties.items[0]; 
                 
-                // Om vi är i helskärm, stäng det först för att kunna visa detaljerna
                 if (document.fullscreenElement) {
                     exitFullscreen();
-                    // Vänta lite så helskärm hinner stängas innan vi scrollar
                     setTimeout(() => scrollToItem(uniqueId), 300);
                 } else {
                     scrollToItem(uniqueId);
@@ -2348,7 +2331,6 @@
         });
     }
 
-    // -- RENDERA ALLT --
     function renderAll() {
         feedContainer.innerHTML = '';
         
@@ -2379,7 +2361,6 @@
         }));
         timelineData.add(timelineItems);
 
-        // Visa bara relevanta grupper i tidslinjen
         const activeGroupIds = uniqueCategories.filter(cat => activeCategories.has(cat));
         timelineGroups.forEach(group => {
             timelineGroups.update({id: group.id, visible: activeGroupIds.includes(group.id)});
