@@ -6,11 +6,11 @@
     <title>Händelseöversikt</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; padding: 20px; color: #333; margin: 0; }
         
-        /* BREDDNING: Nu tar containern upp 98% av skärmen för att göra tidslinjen så lång som möjligt */
         .container { 
             max-width: 98%; 
             margin: 0 auto; 
@@ -20,23 +20,29 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
         }
         
-        h2 { text-align: center; color: #2c3e50; margin-bottom: 30px;}
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 20px;}
 
-        /* Filter */
+        /* Kontrollpanel */
         .controls {
             background: #f8f9fa; 
             border: 1px solid #e9ecef;
             border-radius: 8px;
             padding: 15px;
             margin-bottom: 20px;
-            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
         }
 
-        .filter-actions {
-            margin-bottom: 15px;
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
-        .toggle-btn {
+        button {
             background-color: #2c3e50;
             color: white;
             border: none;
@@ -44,23 +50,30 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 0.9rem;
-            transition: background 0.2s;
+            transition: background 0.2s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
-        .toggle-btn:hover { background-color: #34495e; }
+        button:hover { background-color: #34495e; }
+        button:active { transform: scale(0.98); }
+        
+        button.secondary { background-color: #95a5a6; }
+        button.secondary:hover { background-color: #7f8c8d; }
 
         .filters { 
             display: flex; 
             flex-wrap: wrap; 
-            gap: 10px; 
+            gap: 8px; 
             justify-content: center;
         }
         
         .filters label { 
             cursor: pointer; 
-            font-size: 0.9rem; 
+            font-size: 0.85rem; 
             background: #fff; 
-            padding: 5px 12px; 
-            border-radius: 20px; 
+            padding: 4px 10px; 
+            border-radius: 15px; 
             border: 1px solid #ddd;
             display: flex;
             align-items: center;
@@ -68,12 +81,26 @@
             user-select: none;
         }
         .filters label:hover { background: #eee; }
-        .filters input { margin-right: 8px; }
+        .filters input { margin-right: 6px; }
         
         /* Tidslinje */
-        #visualization { margin-bottom: 40px; border: 1px solid #ddd; border-radius: 4px; background: white;}
+        #visualization { 
+            margin-bottom: 40px; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+            background: white;
+        }
 
-        /* Lista (Feed) - Behåller denna lite smalare för läsbarhetens skull */
+        /* Helskärms-CSS */
+        #visualization:fullscreen {
+            width: 100vw !important;
+            height: 100vh !important;
+            background: white;
+            padding: 20px;
+            overflow: hidden; /* Vis.js hanterar scrollen internt */
+        }
+
+        /* Lista (Feed) */
         .feed-container { max-width: 900px; margin: 0 auto; }
         
         .feed-item { 
@@ -97,7 +124,6 @@
         }
         summary::-webkit-details-marker { display: none; }
         summary:hover { background: #f8f9fa; }
-        
         summary::after { content: '+'; font-size: 1.5em; color: #aaa; font-weight: 300; }
         details[open] summary::after { content: '-'; }
 
@@ -143,8 +169,11 @@
     <h2>Omvärldsbevakning: Händelser & Tidslinje</h2>
 
     <div class="controls">
-        <div class="filter-actions">
-            <button class="toggle-btn" onclick="toggleAllFilters()">Markera alla / Avmarkera alla</button>
+        <div class="btn-group">
+            <button onclick="toggleFullscreen()" title="Visa helskärm"><i class="fas fa-expand"></i> Helskärm</button>
+            <button class="secondary" onclick="zoomTimeline(-0.2)" title="Zooma ut"><i class="fas fa-search-minus"></i></button>
+            <button class="secondary" onclick="zoomTimeline(0.2)" title="Zooma in"><i class="fas fa-search-plus"></i></button>
+            <button class="secondary" onclick="toggleAllFilters()" title="Välj alla / Avmarkera alla"><i class="fas fa-check-double"></i> Välj alla/inga</button>
         </div>
         <div class="filters" id="filter-container"></div>
     </div>
@@ -159,11 +188,10 @@
     //  1. DIN DATA
     // ==========================================================
     
-    // Lista över kategorier vi INTE vill visa (tar bort dem helt)
+    // Kategorier att exkludera
     const blacklistedCategories = ['CYBER', 'THREAT', 'CRIME'];
 
-    const rawEvents = [
- {country:'SE',cat:'HYBRID',title:'Misstänkta konton söker drönarpiloter i forum',place:'Sverige (online)',date:'2025-10-05',lat:59.334,lng:18.067,summary:'Nya, misstänkta Facebook-konton erbjuder betalning för flygningar nära skyddsobjekt, och de verkar veta vilka de ska rikta in sig på. Administratörer tar bort profiler varje vecka.',url:'https://www.sverigesradio.se/artikel/dronarpiloter-soks-upp-pa-facebook-for-att-spana-pa-skyddsobjekt',source:'Sveriges Radio (2025)'},
+    const rawEvents = [  {country:'SE',cat:'HYBRID',title:'Misstänkta konton söker drönarpiloter i forum',place:'Sverige (online)',date:'2025-10-05',lat:59.334,lng:18.067,summary:'Nya, misstänkta Facebook-konton erbjuder betalning för flygningar nära skyddsobjekt, och de verkar veta vilka de ska rikta in sig på. Administratörer tar bort profiler varje vecka.',url:'https://www.sverigesradio.se/artikel/dronarpiloter-soks-upp-pa-facebook-for-att-spana-pa-skyddsobjekt',source:'Sveriges Radio (2025)'},
   {country:'SE',cat:'NUCLEAR',title:'Ryskt uranfartyg med motorhaveri utanför Blekinge',place:'31 km SO om Hasslö, Blekinge (SE)',date:'2025-09-29',lat:56.118,lng:15.585,summary:'Panamaflaggade Mikhail Dudin ligger för ankar efter motorhaveri; tidigare urantransporter till Seversk. Kustbevakning/Marinen informerade.',url:'https://www.sydostran.se/nyheter/ryskt-fartyg-med-motorhaveri-utanfor-blekinge-anvands-for-att-frakta-uran/',source:'Hultgren, 2025 / Sydöstran'},
   {country:'SE',cat:'DRONE',title:'Drönarlarm vid Ronneby flygplats',place:'Ronneby Airport (SE)',date:'2025-09-29',lat:56.266,lng:15.265,summary:'Misstänkt drönare. Plan vände mot Kalmar innan landning i Ronneby. Civil/militär flygplats (F 17).',url:'https://www.expressen.se/nyheter/expressen-direkt/?post=1ddb8d7c-0474-4d53-af33-f0cc6c69a7ed',source:'Expressen Direkt (2025)'},
   {country:'SE',cat:'DRONE',title:'Drönare stoppade flygtrafik i Sundsvall (Polisen)',place:'Sundsvall–Timrå Airport (SE)',date:'2025-09-28',lat:62.529,lng:17.444,summary:'Drönare i förbudszon. Ett plan fick vänta ~40 min. En man greps (vårdslöshet i flygtrafik m.m.).',url:'https://polisen.se/aktuellt/handelser/2025/september/29/29-september-07.14-sammanfattning-natt-vasternorrlands-lan/',source:'Polisen (2025-09-29)'},
@@ -2049,9 +2077,10 @@
 {country:'IT',cat:'HYBRID',title:'Polis stoppar propalestinska försök att störa OS-facklans start i Rom',place:'Stadio dei Marmi, Rom (IT)',date:'2025-12-06',lat:41.9344,lng:12.4547,summary:'Italiensk polis stoppade flera propalestinska grupper som försökte störa starten av OS-fackelstafetten Milano–Cortina 2026. Två grupper hindrades från att nå rutten och en tredje övervakades vid La Sapienza. Mindre konfrontationer avbröts snabbt.',url:'https://www.linkedin.com/posts/svensk-osint_pro-palestinian-activists-stopped-from-disrupting-activity-7403475296391401472-_PKN',source:'AP / Reuters / Ground News / Arab News (2025)'},
 
 {country:'SE',cat:'INFRA',title:'Man anhållen för olovlig avbildning av skyddsobjekt vid Nackamasterna',place:'Nackamasterna, Källtorpssjön (SE)',date:'2025-12-07',lat:59.28553,lng:18.23629,summary:'En man anhölls efter att ha avbildat Nackamasterna, ett skyddsobjekt i det svenska radio- och tv-nätet. Ärendet gäller olovlig avbildning enligt skyddslagen. Medier uppger att mannen är rysk medborgare och misstänks för sabotageplaner, vilket inte bekräftats officiellt.',url:'https://www.linkedin.com/posts/svensk-osint_avbildade-nackamasterna-man-anhållen-activity-7403861602426404864-ZHvW',source:'Åklagarmyndigheten / Aftonbladet / Nyheter24 / SVT / Omni (2025)'},
+
     ];
 
-    // Filtrera bort de oönskade kategorierna direkt
+    // Filtrera bort oönskade kategorier
     const myEvents = rawEvents.filter(item => !blacklistedCategories.includes(item.cat));
 
 
@@ -2068,7 +2097,6 @@
         return '#' + '00000'.substring(0, 6 - c.length) + c;
     }
 
-    // Hämta unika kategorier från den filtrerade listan
     const uniqueCategories = [...new Set(myEvents.map(e => e.cat))].sort();
     let activeCategories = new Set(uniqueCategories);
 
@@ -2081,9 +2109,9 @@
     const filterContainer = document.getElementById('filter-container');
     const timelineContainer = document.getElementById('visualization');
 
-    // -- SKAPA FILTER & KNAPP --
+    // -- SKAPA FILTER --
     function createFilters() {
-        filterContainer.innerHTML = ''; // Rensa
+        filterContainer.innerHTML = ''; 
         uniqueCategories.forEach(cat => {
             const label = document.createElement('label');
             label.style.borderColor = categoryColors[cat]; 
@@ -2110,17 +2138,14 @@
         });
     }
 
-    // Funktion för knappen "Markera/Avmarkera alla"
     function toggleAllFilters() {
         if (activeCategories.size === uniqueCategories.length) {
-            // Om alla är valda -> Avmarkera alla
             activeCategories.clear();
         } else {
-            // Annars -> Markera alla
             activeCategories = new Set(uniqueCategories);
         }
-        createFilters(); // Rita om checkboxarna så de visar rätt status
-        renderAll();     // Uppdatera tidslinje och lista
+        createFilters(); 
+        renderAll();
     }
 
     // -- INITIERA TIDSLINJE --
@@ -2129,7 +2154,6 @@
     let timelineGroups = new vis.DataSet([]);
 
     function initTimeline() {
-        // Skapa grupper för alla kategorier
         const groups = uniqueCategories.map(cat => ({
             id: cat,
             content: cat,
@@ -2138,10 +2162,13 @@
         timelineGroups.add(groups);
 
         const options = {
-            height: '500px', // Lite högre för att få plats med allt
+            // FIX: Gör att tidslinjen får en fast höjd, men man kan scrolla INUTI den.
+            height: '600px', 
+            verticalScroll: true, // Superviktigt för många kategorier!
+            zoomKey: 'ctrlKey',   // Förhindrar oavsiktlig zoom när man scrollar på sidan
             stack: true,
-            zoomMin: 1000 * 60 * 60 * 24 * 1, // 1 dag
-            zoomMax: 1000 * 60 * 60 * 24 * 365 * 2, // 2 år
+            zoomMin: 1000 * 60 * 60 * 24 * 1, 
+            zoomMax: 1000 * 60 * 60 * 24 * 365 * 2,
             start: '2025-08-01', 
             end: '2025-12-01',
             margin: { item: 10, axis: 5 }
@@ -2156,8 +2183,34 @@
                 if(element) {
                     element.open = true;
                     element.scrollIntoView({behavior: "smooth", block: "center"});
+                    // Markera kortet tillfälligt
+                    element.style.borderColor = "#2c3e50";
+                    setTimeout(() => element.style.borderColor = "#e1e4e8", 2000);
                 }
             }
+        });
+    }
+
+    // -- HELSKÄRMSFUNKTION --
+    function toggleFullscreen() {
+        const elem = document.getElementById("visualization");
+        
+        if (!document.fullscreenElement) {
+            elem.requestFullscreen().catch(err => {
+                alert(`Kunde inte gå till helskärm: ${err.message}`);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
+    // -- ZOOMFUNKTIONER --
+    function zoomTimeline(percentage) {
+        const range = timeline.getWindow();
+        const interval = range.end - range.start;
+        timeline.setWindow({
+            start: range.start.valueOf() - interval * percentage,
+            end:   range.end.valueOf()   + interval * percentage
         });
     }
 
@@ -2165,26 +2218,30 @@
     function renderAll() {
         feedContainer.innerHTML = '';
         
-        // 1. Filtrera listan baserat på checkboxar
         const filtered = myEvents.filter(item => activeCategories.has(item.cat));
 
-        // 2. Uppdatera Tidslinje-data
         timelineData.clear();
         const timelineItems = filtered.map((item, index) => ({
             id: index,
             group: item.cat, 
             start: item.date,
-            content: `<span style="color:${categoryColors[item.cat]}">●</span> ${item.title.substring(0, 30)}...`, // Kort titel i tidslinjen
-            title: `<div style="max-width:250px;"><b>${item.title}</b><br><br>${item.summary}</div>`, // Tooltip
-            style: `background-color: white; border: 1px solid ${categoryColors[item.cat]}; border-left: 5px solid ${categoryColors[item.cat]}; color: #333; border-radius: 3px;`
+            content: `<span style="color:${categoryColors[item.cat]}">●</span> ${item.title.substring(0, 30)}...`,
+            title: `<div style="max-width:250px;"><b>${item.title}</b><br><br>${item.summary}</div>`,
+            style: `background-color: white; border: 1px solid ${categoryColors[item.cat]}; border-left: 5px solid ${categoryColors[item.cat]}; color: #333; border-radius: 3px; cursor: pointer;`
         }));
         timelineData.add(timelineItems);
 
-        // Visa bara relevanta grupper i tidslinjen (dölj tomma rader om man avmarkerar)
-        // Vi använder en inbyggd vis.js-metod för att filtrera grupper, eller så låter vi dem vara kvar men tomma.
-        // För tydlighetens skull låter vi grupperna vara kvar så man ser strukturen.
+        // Uppdatera grupper så bara valda syns (valfritt, men snyggare)
+        const visibleGroups = uniqueCategories
+            .filter(cat => activeCategories.has(cat))
+            .map(cat => ({
+                id: cat,
+                content: cat,
+                style: `border-left: 5px solid ${categoryColors[cat]}; font-weight:bold;`
+            }));
+        timelineGroups.clear();
+        timelineGroups.add(visibleGroups);
 
-        // 3. Uppdatera Listan (Feed)
         const sortedList = filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
 
         sortedList.forEach((item, index) => {
@@ -2218,7 +2275,6 @@
         });
     }
 
-    // Kör igång
     createFilters();
     initTimeline();
     renderAll();
