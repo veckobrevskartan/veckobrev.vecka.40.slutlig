@@ -25,24 +25,52 @@
             max-width: 98%;
             margin: 0 auto;
             background: transparent;
+            transition: all 0.3s ease;
         }
 
-        /* Helskärmsläge */
+        /* --- HELSKÄRMSLÄGE CSS --- */
+        /* När denna klass läggs på containern ändras layouten drastiskt */
         .app-container.fullscreen-mode {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            padding: 20px;
-            box-sizing: border-box;
-            background: var(--bg-color);
+            padding: 0;
+            margin: 0;
+            background: var(--card-bg);
             z-index: 9999;
-            overflow-y: auto;
-            max-width: 100%;
+            box-sizing: border-box;
+            display: flex;       /* Använd Flexbox för att styra höjden */
+            flex-direction: column;
         }
 
-        /* --- ÖVRE DELEN: Filter & Tidslinje --- */
+        /* Dölj den nedre sektionen (Listan & Legenden) helt i helskärm */
+        .app-container.fullscreen-mode .bottom-section {
+            display: none !important;
+        }
+
+        /* Anpassa den övre sektionen (Tidslinjen) i helskärm */
+        .app-container.fullscreen-mode .top-section {
+            height: 100%;       /* Ta upp hela höjden */
+            margin: 0;
+            border: none;
+            border-radius: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 10px 20px;
+            box-sizing: border-box;
+        }
+
+        /* Gör att tidslinje-diven fyller ut allt utrymme som blir över */
+        .app-container.fullscreen-mode #visualization {
+            flex-grow: 1;
+            height: auto !important; /* Viktigt! Låter flexbox styra höjden */
+            border: none;
+        }
+
+        /* --- STANDARD STYLING --- */
+
         .top-section {
             background: var(--card-bg);
             padding: 20px;
@@ -52,7 +80,6 @@
             border: 1px solid var(--border-color);
         }
 
-        /* Kontrollpanel */
         .controls {
             display: flex;
             flex-direction: column;
@@ -62,44 +89,24 @@
         }
 
         /* Sökruta */
-        .search-wrapper {
-            width: 100%;
-            max-width: 600px;
-            position: relative;
-        }
-        
+        .search-wrapper { width: 100%; max-width: 600px; position: relative; }
         .search-wrapper input {
-            width: 100%;
-            padding: 10px 15px 10px 40px;
-            border: 1px solid #ccc;
-            border-radius: 25px;
-            font-size: 1rem;
-            outline: none;
-            box-sizing: border-box;
+            width: 100%; padding: 10px 15px 10px 40px; border: 1px solid #ccc;
+            border-radius: 25px; font-size: 1rem; outline: none; box-sizing: border-box;
         }
         .search-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #888; }
 
         .btn-group { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 
         button {
-            background-color: var(--primary-btn);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 6px;
+            background-color: var(--primary-btn); color: white; border: none; padding: 8px 16px;
+            border-radius: 4px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 6px;
         }
         button:hover { background-color: var(--primary-btn-hover); }
-        
         #close-fs-btn { background-color: #e74c3c; display: none; }
         button.secondary { background-color: #95a5a6; }
         button.secondary:hover { background-color: #7f8c8d; }
 
-        /* Filterknappar */
         .filters { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
         .filters label { 
             cursor: pointer; font-size: 0.75rem; background: #fff; padding: 3px 8px; 
@@ -108,74 +115,34 @@
         .filters label:hover { background: #eee; }
         .filters input { margin-right: 5px; }
 
-        /* Tidslinje */
-        #visualization { 
-            border: 1px solid var(--border-color); 
-            border-radius: 4px; 
-            background: white;
-        }
+        #visualization { border: 1px solid var(--border-color); border-radius: 4px; background: white; }
 
-        /* --- NEDRE DELEN: Grid med Legend & Feed --- */
         .bottom-section {
-            display: grid;
-            grid-template-columns: 260px 1fr; /* Vänster 260px, Höger resten */
-            gap: 20px;
-            align-items: start;
+            display: grid; grid-template-columns: 260px 1fr; gap: 20px; align-items: start;
         }
 
-        /* Vänsterspalt: Teckenförklaring */
         .sidebar {
-            background: var(--card-bg);
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            border: 1px solid var(--border-color);
-            position: sticky; /* Gör att den följer med när man scrollar */
-            top: 20px;
+            background: var(--card-bg); padding: 15px; border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); border: 1px solid var(--border-color);
+            position: sticky; top: 20px;
         }
-
         .sidebar h3 { margin-top: 0; color: #2c3e50; font-size: 1rem; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 12px; }
 
-        .legend-item {
-            display: flex;
-            align-items: flex-start;
-            margin-bottom: 12px;
-            font-size: 0.85em;
-        }
+        .legend-item { display: flex; align-items: flex-start; margin-bottom: 12px; font-size: 0.85em; }
         .legend-icon { width: 20px; text-align: center; margin-right: 8px; font-size: 1.1em; margin-top: 1px; }
         .legend-text strong { display: block; color: #2c3e50; margin-bottom: 2px; }
         .legend-text span { display: block; color: #666; line-height: 1.3; }
 
-        /* Feed / Lista */
-        .feed-container { width: 100%; }
-        
+        .feed-container { width: 100%; padding-bottom: 50px;}
         .feed-item { 
-            margin-bottom: 10px; 
-            background: #fff;
-            border: 1px solid var(--border-color); 
-            border-radius: 6px; 
-            overflow: hidden; 
-            scroll-margin-top: 20px; 
+            margin-bottom: 10px; background: #fff; border: 1px solid var(--border-color); 
+            border-radius: 6px; overflow: hidden; scroll-margin-top: 20px; 
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         
-        /* Markeringseffekt vid klick i tidslinjen */
-        .highlight-item {
-            border: 2px solid var(--primary-btn) !important;
-            box-shadow: 0 0 15px rgba(44, 62, 80, 0.2);
-            transform: scale(1.01);
-            transition: all 0.3s;
-        }
+        .highlight-item { border: 2px solid var(--primary-btn) !important; box-shadow: 0 0 15px rgba(44, 62, 80, 0.2); transform: scale(1.01); transition: all 0.3s; }
         
-        summary {
-            padding: 12px 15px;
-            background: #fff;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            list-style: none;
-        }
+        summary { padding: 12px 15px; background: #fff; cursor: pointer; display: flex; justify-content: space-between; align-items: center; list-style: none; }
         summary::-webkit-details-marker { display: none; }
         summary:hover { background: #f8f9fa; }
         summary::after { content: '+'; font-size: 1.5em; color: #aaa; font-weight: 300; }
@@ -191,7 +158,7 @@
         .source-link:hover { text-decoration: underline; }
 
         @media (max-width: 900px) {
-            .bottom-section { grid-template-columns: 1fr; } /* Stapla på mobil */
+            .bottom-section { grid-template-columns: 1fr; }
             .sidebar { position: static; margin-bottom: 20px; }
         }
     </style>
@@ -201,7 +168,7 @@
 <div class="app-container" id="main-container">
     
     <section class="top-section">
-        <h2 style="text-align:center; margin-top:0; color:#2c3e50;">Svensk OSINT Omvärldsbevakning: Händelser & Tidslinje</h2>
+        <h2 style="text-align:center; margin-top:0; color:#2c3e50; margin-bottom:15px;">Omvärldsbevakning: Händelser & Tidslinje</h2>
 
         <div class="controls">
             <div class="search-wrapper">
@@ -238,13 +205,11 @@
 
 <script>
     // ==========================================================
-    //  1. KONFIGURATION & ÖVERSÄTTNING
+    //  1. KONFIGURATION
     // ==========================================================
     
-    // Dessa visas inte alls
     const blacklistedCategories = ['CYBER', 'THREAT', 'CRIME'];
 
-    // Inställningar för kategorier (Svenska namn och ikoner)
     const categoryConfig = {
         'DRONE':    { label: 'Drönare / UAV', icon: 'fa-plane', desc: 'Incidenter med UAV/drönare.' },
         'INFRA':    { label: 'Infrastruktur / sabotage', icon: 'fa-bolt', desc: 'Kritisk infrastruktur, sabotage, störningar.' },
@@ -266,7 +231,7 @@
     // ==========================================================
 
     const rawEvents = [
- {country:'SE',cat:'HYBRID',title:'Misstänkta konton söker drönarpiloter i forum',place:'Sverige (online)',date:'2025-10-05',lat:59.334,lng:18.067,summary:'Nya, misstänkta Facebook-konton erbjuder betalning för flygningar nära skyddsobjekt, och de verkar veta vilka de ska rikta in sig på. Administratörer tar bort profiler varje vecka.',url:'https://www.sverigesradio.se/artikel/dronarpiloter-soks-upp-pa-facebook-for-att-spana-pa-skyddsobjekt',source:'Sveriges Radio (2025)'},
+  {country:'SE',cat:'HYBRID',title:'Misstänkta konton söker drönarpiloter i forum',place:'Sverige (online)',date:'2025-10-05',lat:59.334,lng:18.067,summary:'Nya, misstänkta Facebook-konton erbjuder betalning för flygningar nära skyddsobjekt, och de verkar veta vilka de ska rikta in sig på. Administratörer tar bort profiler varje vecka.',url:'https://www.sverigesradio.se/artikel/dronarpiloter-soks-upp-pa-facebook-for-att-spana-pa-skyddsobjekt',source:'Sveriges Radio (2025)'},
   {country:'SE',cat:'NUCLEAR',title:'Ryskt uranfartyg med motorhaveri utanför Blekinge',place:'31 km SO om Hasslö, Blekinge (SE)',date:'2025-09-29',lat:56.118,lng:15.585,summary:'Panamaflaggade Mikhail Dudin ligger för ankar efter motorhaveri; tidigare urantransporter till Seversk. Kustbevakning/Marinen informerade.',url:'https://www.sydostran.se/nyheter/ryskt-fartyg-med-motorhaveri-utanfor-blekinge-anvands-for-att-frakta-uran/',source:'Hultgren, 2025 / Sydöstran'},
   {country:'SE',cat:'DRONE',title:'Drönarlarm vid Ronneby flygplats',place:'Ronneby Airport (SE)',date:'2025-09-29',lat:56.266,lng:15.265,summary:'Misstänkt drönare. Plan vände mot Kalmar innan landning i Ronneby. Civil/militär flygplats (F 17).',url:'https://www.expressen.se/nyheter/expressen-direkt/?post=1ddb8d7c-0474-4d53-af33-f0cc6c69a7ed',source:'Expressen Direkt (2025)'},
   {country:'SE',cat:'DRONE',title:'Drönare stoppade flygtrafik i Sundsvall (Polisen)',place:'Sundsvall–Timrå Airport (SE)',date:'2025-09-28',lat:62.529,lng:17.444,summary:'Drönare i förbudszon. Ett plan fick vänta ~40 min. En man greps (vårdslöshet i flygtrafik m.m.).',url:'https://polisen.se/aktuellt/handelser/2025/september/29/29-september-07.14-sammanfattning-natt-vasternorrlands-lan/',source:'Polisen (2025-09-29)'},
@@ -2152,7 +2117,8 @@
 {country:'IT',cat:'HYBRID',title:'Polis stoppar propalestinska försök att störa OS-facklans start i Rom',place:'Stadio dei Marmi, Rom (IT)',date:'2025-12-06',lat:41.9344,lng:12.4547,summary:'Italiensk polis stoppade flera propalestinska grupper som försökte störa starten av OS-fackelstafetten Milano–Cortina 2026. Två grupper hindrades från att nå rutten och en tredje övervakades vid La Sapienza. Mindre konfrontationer avbröts snabbt.',url:'https://www.linkedin.com/posts/svensk-osint_pro-palestinian-activists-stopped-from-disrupting-activity-7403475296391401472-_PKN',source:'AP / Reuters / Ground News / Arab News (2025)'},
 
 {country:'SE',cat:'INFRA',title:'Man anhållen för olovlig avbildning av skyddsobjekt vid Nackamasterna',place:'Nackamasterna, Källtorpssjön (SE)',date:'2025-12-07',lat:59.28553,lng:18.23629,summary:'En man anhölls efter att ha avbildat Nackamasterna, ett skyddsobjekt i det svenska radio- och tv-nätet. Ärendet gäller olovlig avbildning enligt skyddslagen. Medier uppger att mannen är rysk medborgare och misstänks för sabotageplaner, vilket inte bekräftats officiellt.',url:'https://www.linkedin.com/posts/svensk-osint_avbildade-nackamasterna-man-anhållen-activity-7403861602426404864-ZHvW',source:'Åklagarmyndigheten / Aftonbladet / Nyheter24 / SVT / Omni (2025)'},
- {country:'PL',cat:'INTEL',title:'Tre ukrainska män gripna med avancerad hackningsutrustning',place:'Senatorska-gatan, Warszawa (PL)',date:'2025-12-08',lat:52.24354,lng:21.00294,summary:'Polsk polis stoppade en bil på Senatorska-gatan i centrala Warszawa och grep tre ukrainska män, 39–43 år, efter att avancerad hacknings- och övervakningsutrustning hittats. Bland beslagen fanns Flipper Zero, RF/GS-detektor, antenner, datorer, SIM-kort, routrar och krypterade databärare som bedöms kunna användas för intrång i IT- och telekomnät samt påverka IT-data av betydelse för landets försvar. Männen gav inga trovärdiga förklaringar och är häktade i tre månader i väntan på fortsatt utredning.',url:'https://www.linkedin.com/posts/svensk-osint_poland-detains-three-ukrainians-over-possession-activity-7404214357880025088-XiTQ',source:'Komenda Rejonowa Policji Warszawa I / BleepingComputer / Polskie Radio / Reuters (2025)'},
+
+  {country:'PL',cat:'INTEL',title:'Tre ukrainska män gripna med avancerad hackningsutrustning',place:'Senatorska-gatan, Warszawa (PL)',date:'2025-12-08',lat:52.24354,lng:21.00294,summary:'Polsk polis stoppade en bil på Senatorska-gatan i centrala Warszawa och grep tre ukrainska män, 39–43 år, efter att avancerad hacknings- och övervakningsutrustning hittats. Bland beslagen fanns Flipper Zero, RF/GS-detektor, antenner, datorer, SIM-kort, routrar och krypterade databärare som bedöms kunna användas för intrång i IT- och telekomnät samt påverka IT-data av betydelse för landets försvar. Männen gav inga trovärdiga förklaringar och är häktade i tre månader i väntan på fortsatt utredning.',url:'https://www.linkedin.com/posts/svensk-osint_poland-detains-three-ukrainians-over-possession-activity-7404214357880025088-XiTQ',source:'Komenda Rejonowa Policji Warszawa I / BleepingComputer / Polskie Radio / Reuters (2025)'},
 
   {country:'NO',cat:'TERROR',title:'Skottlossning inne på Storo Storsenter – misstänkt gripen',place:'Storo Storsenter, Oslo (NO)',date:'2025-12-08',lat:59.94341,lng:10.76590,summary:'Polisen evakuerade Storo Storsenter efter att ett skott avlossats inne i köpcentret den 8 december. Ingen skadades och en misstänkt gärningsman greps på plats, beväpnad med skjutvapen, ett slagträ samt eventuellt en kniv (oklart). Händelsen utreds som allvarligt vapenbrott.',url:'https://www.linkedin.com/posts/svensk-osint_norway-police-say-suspect-detained-in-shooting-activity-7404266160894197760-z-mX',source:'Associated Press / Reuters / Xinhua / China Daily / Euronews / TRT World (2025)'},
 
@@ -2171,9 +2137,8 @@
   {country:'CA',cat:'INFRA',title:'Kraftig ökning av kopparstölder mot BC Hydro',place:'Vancouver, BC (CA)',date:'2025-12-10',lat:49.2827,lng:-123.1207,summary:'BC Hydro rapporterar en nära 400-procentig ökning av kopparstölder sedan januari 2024, med 24 stölder och sabotage mot underjordiska kablar jämfört med fem fall under de två föregående åren. Incidenterna har orsakat omkring 1,2 miljoner CAD i skador och bedöms innebära livsfara samt risk för strömavbrott och bränder. Den nationella trenden är liknande, med hundratals kopparstölder rapporterade av Bell och omfattande skador i bland annat Ontario, Calgary och Prince George.',url:'https://www.linkedin.com/posts/svensk-osint_bc-hydro-warns-of-risk-as-copper-thefts-surge-activity-7404953018200178688-bIKx',source:'BC Hydro (2025) / CHEK News (2025) / Nielsen (2025) / CityNews Staff (2025) / Clearwater-North Thompson Times (2025)'},
 
   {country:'SE',cat:'INFRA',title:'Bilister belysta med grön laser på E16',place:'E16 mellan Borlänge och Falun (SE)',date:'2025-12-12',lat:60.6030,lng:15.6350,summary:'Flera bilister på E16 mellan Borlänge och Falun larmade vid 19.15-tiden om att de blivit belysta med grön laser. Minst en person upplevde obehag i ögonen. Polisen har inlett en förundersökning om misstänkt misshandel.',url:'https://www.expressen.se/nyheter/expressen-direkt/?post=8f35a826-3795-4b85-9462-5a53036635d5',source:'Expressen (2025)'},
-];
+    ];
 
-    // Filtrera bort blacklist och sätt unika IDn
     const myEvents = rawEvents
         .filter(item => !blacklistedCategories.includes(item.cat))
         .map((item, index) => ({ ...item, id: index }));
@@ -2260,7 +2225,6 @@
             label.appendChild(checkbox);
             
             const span = document.createElement('span');
-            // Använd svensk text från config
             span.innerHTML = `<i class="fas ${info.icon}" style="color:${categoryColors[cat]}; margin-right:5px;"></i> ${info.label}`;
             span.style.color = "#333";
             span.style.fontWeight = "600";
@@ -2280,7 +2244,7 @@
         renderAll();
     }
 
-    // -- HELSKÄRMSLOGIK --
+    // -- HELSKÄRMSLOGIK (Uppdaterad för att dölja nedre delen) --
     function enterFullscreen() {
         if (mainContainer.requestFullscreen) mainContainer.requestFullscreen();
         else if (mainContainer.webkitRequestFullscreen) mainContainer.webkitRequestFullscreen();
@@ -2290,8 +2254,12 @@
         document.getElementById('open-fs-btn').style.display = 'none';
         document.getElementById('close-fs-btn').style.display = 'flex';
         
-        // Öka tidslinjens höjd lite i helskärmsläge
-        if(timeline) timeline.setOptions({ height: '600px' });
+        // Uppdatera tidslinjen så den ritas om i ny storlek
+        if(timeline) {
+            // Låt tidslinjen fylla tillgängligt utrymme (flex-grow)
+            // Vi sätter ingen fast höjd, CSS sköter det nu med flex
+            timeline.redraw();
+        }
     }
 
     function exitFullscreen() {
@@ -2305,7 +2273,10 @@
             mainContainer.classList.remove('fullscreen-mode');
             document.getElementById('open-fs-btn').style.display = 'flex';
             document.getElementById('close-fs-btn').style.display = 'none';
-            if(timeline) timeline.setOptions({ height: '500px' });
+            // Återställ tidslinjehöjd till default
+            if(timeline) {
+                timeline.setOptions({ height: '500px' });
+            }
         }
     });
 
@@ -2319,7 +2290,6 @@
             const info = getCatInfo(cat);
             return {
                 id: cat,
-                // Visa ikon + svenskt namn i tidslinjens vänsterkant
                 content: `<i class="fas ${info.icon}" style="color:${categoryColors[cat]}"></i> <b>${info.label}</b>`,
                 style: `border-left: 5px solid ${categoryColors[cat]}; font-size: 0.9em;`
             };
@@ -2327,7 +2297,7 @@
         timelineGroups.add(groups);
 
         const options = {
-            height: '500px', 
+            height: '500px', // Standardhöjd (skrivs över i helskärm av CSS flex)
             verticalScroll: true, 
             horizontalScroll: true,
             zoomKey: 'ctrlKey',
@@ -2346,15 +2316,27 @@
         timeline.on('select', function (properties) {
             if(properties.items.length > 0) {
                 const uniqueId = properties.items[0]; 
-                const element = document.getElementById(`item-${uniqueId}`);
-                if(element) {
-                    element.open = true;
-                    element.scrollIntoView({behavior: "smooth", block: "center"});
-                    element.classList.add('highlight-item');
-                    setTimeout(() => element.classList.remove('highlight-item'), 2000);
+                
+                // Om vi är i helskärm, stäng det först för att kunna visa detaljerna
+                if (document.fullscreenElement) {
+                    exitFullscreen();
+                    // Vänta lite så helskärm hinner stängas innan vi scrollar
+                    setTimeout(() => scrollToItem(uniqueId), 300);
+                } else {
+                    scrollToItem(uniqueId);
                 }
             }
         });
+    }
+    
+    function scrollToItem(uniqueId) {
+        const element = document.getElementById(`item-${uniqueId}`);
+        if(element) {
+            element.open = true;
+            element.scrollIntoView({behavior: "smooth", block: "center"});
+            element.classList.add('highlight-item');
+            setTimeout(() => element.classList.remove('highlight-item'), 2000);
+        }
     }
 
     function zoomTimeline(percentage) {
@@ -2370,7 +2352,6 @@
     function renderAll() {
         feedContainer.innerHTML = '';
         
-        // 1. Filtrera
         const filtered = myEvents.filter(item => {
             const hasCategory = activeCategories.has(item.cat);
             let matchesSearch = true;
@@ -2387,7 +2368,6 @@
             return;
         }
 
-        // 2. Uppdatera tidslinje
         timelineData.clear();
         const timelineItems = filtered.map(item => ({
             id: item.id, 
@@ -2405,7 +2385,6 @@
             timelineGroups.update({id: group.id, visible: activeGroupIds.includes(group.id)});
         });
 
-        // 3. Uppdatera lista
         const sortedList = [...filtered].sort((a, b) => new Date(b.date) - new Date(a.date));
 
         sortedList.forEach(item => {
@@ -2440,7 +2419,6 @@
         });
     }
 
-    // Starta
     createLegend();
     createFilters();
     initTimeline();
