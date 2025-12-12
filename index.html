@@ -20,20 +20,15 @@
 
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-color); padding: 20px; color: var(--text-color); margin: 0; }
         
-        /* Huvudlayout - Grid */
-        .app-wrapper {
-            display: grid;
-            grid-template-columns: 280px 1fr; /* Vänsterspalt + Huvudinnehåll */
-            gap: 20px;
+        /* Huvudcontainer */
+        .app-container {
             max-width: 98%;
             margin: 0 auto;
-            height: calc(100vh - 40px);
-            background: var(--bg-color);
-            transition: all 0.3s ease;
+            background: transparent;
         }
 
         /* Helskärmsläge */
-        .app-wrapper.fullscreen-mode {
+        .app-container.fullscreen-mode {
             position: fixed;
             top: 0;
             left: 0;
@@ -43,89 +38,46 @@
             box-sizing: border-box;
             background: var(--bg-color);
             z-index: 9999;
-            margin: 0;
+            overflow-y: auto;
             max-width: 100%;
         }
 
-        /* --- Vänsterspalt: Teckenförklaring --- */
-        .sidebar {
+        /* --- ÖVRE DELEN: Filter & Tidslinje --- */
+        .top-section {
             background: var(--card-bg);
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            overflow-y: auto;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
             border: 1px solid var(--border-color);
-        }
-
-        .sidebar h3 { margin-top: 0; color: #2c3e50; font-size: 1.1em; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
-
-        .legend-item {
-            display: flex;
-            align-items: flex-start;
-            margin-bottom: 15px;
-            font-size: 0.9em;
-        }
-
-        .legend-icon {
-            width: 24px;
-            text-align: center;
-            margin-right: 10px;
-            font-size: 1.1em;
-            margin-top: 2px;
-        }
-
-        .legend-text strong { display: block; color: #2c3e50; margin-bottom: 2px; }
-        .legend-text span { display: block; color: #666; font-size: 0.85em; line-height: 1.3; }
-        .legend-code { color: #999; font-size: 0.8em; font-weight: normal; }
-
-        /* --- Högerspalt: Tidslinje & Feed --- */
-        .main-content {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            overflow-y: auto;
         }
 
         /* Kontrollpanel */
         .controls {
-            background: var(--card-bg); 
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 15px;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+            margin-bottom: 20px;
         }
 
         /* Sökruta */
         .search-wrapper {
             width: 100%;
-            max-width: 500px;
+            max-width: 600px;
             position: relative;
         }
         
         .search-wrapper input {
             width: 100%;
-            padding: 12px 15px 12px 40px; /* Plats för ikon */
+            padding: 10px 15px 10px 40px;
             border: 1px solid #ccc;
             border-radius: 25px;
             font-size: 1rem;
             outline: none;
-            transition: border 0.3s;
             box-sizing: border-box;
         }
-        
-        .search-wrapper input:focus { border-color: #3498db; box-shadow: 0 0 5px rgba(52, 152, 219, 0.3); }
-        
-        .search-icon {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #888;
-        }
+        .search-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #888; }
 
         .btn-group { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 
@@ -140,42 +92,62 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            transition: background 0.2s;
         }
         button:hover { background-color: var(--primary-btn-hover); }
         
         #close-fs-btn { background-color: #e74c3c; display: none; }
-        #close-fs-btn:hover { background-color: #c0392b; }
         button.secondary { background-color: #95a5a6; }
         button.secondary:hover { background-color: #7f8c8d; }
 
-        .filters { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-        
+        /* Filterknappar */
+        .filters { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
         .filters label { 
-            cursor: pointer; 
-            font-size: 0.8rem; 
-            background: #fff; 
-            padding: 4px 10px; 
-            border-radius: 15px; 
-            border: 1px solid #ddd;
-            display: flex;
-            align-items: center;
-            user-select: none;
-            transition: all 0.2s;
+            cursor: pointer; font-size: 0.75rem; background: #fff; padding: 3px 8px; 
+            border-radius: 12px; border: 1px solid #ddd; display: flex; align-items: center; user-select: none;
         }
-        .filters label:hover { background: #eee; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .filters input { margin-right: 6px; }
-        
+        .filters label:hover { background: #eee; }
+        .filters input { margin-right: 5px; }
+
         /* Tidslinje */
         #visualization { 
             border: 1px solid var(--border-color); 
             border-radius: 4px; 
             background: white;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
         }
 
+        /* --- NEDRE DELEN: Grid med Legend & Feed --- */
+        .bottom-section {
+            display: grid;
+            grid-template-columns: 260px 1fr; /* Vänster 260px, Höger resten */
+            gap: 20px;
+            align-items: start;
+        }
+
+        /* Vänsterspalt: Teckenförklaring */
+        .sidebar {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-color);
+            position: sticky; /* Gör att den följer med när man scrollar */
+            top: 20px;
+        }
+
+        .sidebar h3 { margin-top: 0; color: #2c3e50; font-size: 1rem; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 12px; }
+
+        .legend-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            font-size: 0.85em;
+        }
+        .legend-icon { width: 20px; text-align: center; margin-right: 8px; font-size: 1.1em; margin-top: 1px; }
+        .legend-text strong { display: block; color: #2c3e50; margin-bottom: 2px; }
+        .legend-text span { display: block; color: #666; line-height: 1.3; }
+
         /* Feed / Lista */
-        .feed-container { width: 100%; max-width: 900px; margin: 0 auto; padding-bottom: 50px;}
+        .feed-container { width: 100%; }
         
         .feed-item { 
             margin-bottom: 10px; 
@@ -184,11 +156,14 @@
             border-radius: 6px; 
             overflow: hidden; 
             scroll-margin-top: 20px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         
+        /* Markeringseffekt vid klick i tidslinjen */
         .highlight-item {
             border: 2px solid var(--primary-btn) !important;
             box-shadow: 0 0 15px rgba(44, 62, 80, 0.2);
+            transform: scale(1.01);
             transition: all 0.3s;
         }
         
@@ -216,37 +191,27 @@
         .source-link:hover { text-decoration: underline; }
 
         @media (max-width: 900px) {
-            .app-wrapper { grid-template-columns: 1fr; height: auto; display: block;}
-            .sidebar { margin-bottom: 20px; }
-            .app-wrapper.fullscreen-mode { overflow-y: auto; display: block; }
+            .bottom-section { grid-template-columns: 1fr; } /* Stapla på mobil */
+            .sidebar { position: static; margin-bottom: 20px; }
         }
     </style>
 </head>
 <body>
 
-<div class="app-wrapper" id="main-container">
+<div class="app-container" id="main-container">
     
-    <aside class="sidebar">
-        <h3><i class="fas fa-info-circle"></i> Teckenförklaring</h3>
-        <div id="legend-container">
-            </div>
-    </aside>
-
-    <main class="main-content">
-        
-        <h2 style="text-align:center; margin:0; color:#2c3e50;">Omvärldsbevakning: Händelser & Tidslinje</h2>
+    <section class="top-section">
+        <h2 style="text-align:center; margin-top:0; color:#2c3e50;">Omvärldsbevakning: Händelser & Tidslinje</h2>
 
         <div class="controls">
-            
             <div class="search-wrapper">
                 <i class="fas fa-search search-icon"></i>
-                <input type="text" id="search-input" placeholder="Sök efter händelse, plats eller innehåll..." oninput="handleSearch()">
+                <input type="text" id="search-input" placeholder="Sök händelse, plats, innehåll..." oninput="handleSearch()">
             </div>
 
             <div class="btn-group">
                 <button onclick="enterFullscreen()" id="open-fs-btn"><i class="fas fa-expand"></i> Helskärm</button>
                 <button onclick="exitFullscreen()" id="close-fs-btn"><i class="fas fa-times"></i> Stäng helskärm</button>
-                
                 <button class="secondary" onclick="zoomTimeline(-0.2)" title="Zooma ut"><i class="fas fa-search-minus"></i></button>
                 <button class="secondary" onclick="zoomTimeline(0.2)" title="Zooma in"><i class="fas fa-search-plus"></i></button>
                 <button class="secondary" onclick="toggleAllFilters()"><i class="fas fa-check-double"></i> Alla/Inga</button>
@@ -256,19 +221,30 @@
         </div>
 
         <div id="visualization"></div>
+    </section>
+
+    <section class="bottom-section">
+        
+        <aside class="sidebar">
+            <h3><i class="fas fa-info-circle"></i> Teckenförklaring</h3>
+            <div id="legend-container"></div>
+        </aside>
 
         <div class="feed-container" id="feed-container"></div>
-    </main>
+
+    </section>
 
 </div>
 
 <script>
     // ==========================================================
-    //  1. KONFIGURATION
+    //  1. KONFIGURATION & ÖVERSÄTTNING
     // ==========================================================
     
+    // Dessa visas inte alls
     const blacklistedCategories = ['CYBER', 'THREAT', 'CRIME'];
 
+    // Inställningar för kategorier (Svenska namn och ikoner)
     const categoryConfig = {
         'DRONE':    { label: 'Drönare / UAV', icon: 'fa-plane', desc: 'Incidenter med UAV/drönare.' },
         'INFRA':    { label: 'Infrastruktur / sabotage', icon: 'fa-bolt', desc: 'Kritisk infrastruktur, sabotage, störningar.' },
@@ -290,7 +266,7 @@
     // ==========================================================
 
     const rawEvents = [
-  {country:'SE',cat:'HYBRID',title:'Misstänkta konton söker drönarpiloter i forum',place:'Sverige (online)',date:'2025-10-05',lat:59.334,lng:18.067,summary:'Nya, misstänkta Facebook-konton erbjuder betalning för flygningar nära skyddsobjekt, och de verkar veta vilka de ska rikta in sig på. Administratörer tar bort profiler varje vecka.',url:'https://www.sverigesradio.se/artikel/dronarpiloter-soks-upp-pa-facebook-for-att-spana-pa-skyddsobjekt',source:'Sveriges Radio (2025)'},
+ {country:'SE',cat:'HYBRID',title:'Misstänkta konton söker drönarpiloter i forum',place:'Sverige (online)',date:'2025-10-05',lat:59.334,lng:18.067,summary:'Nya, misstänkta Facebook-konton erbjuder betalning för flygningar nära skyddsobjekt, och de verkar veta vilka de ska rikta in sig på. Administratörer tar bort profiler varje vecka.',url:'https://www.sverigesradio.se/artikel/dronarpiloter-soks-upp-pa-facebook-for-att-spana-pa-skyddsobjekt',source:'Sveriges Radio (2025)'},
   {country:'SE',cat:'NUCLEAR',title:'Ryskt uranfartyg med motorhaveri utanför Blekinge',place:'31 km SO om Hasslö, Blekinge (SE)',date:'2025-09-29',lat:56.118,lng:15.585,summary:'Panamaflaggade Mikhail Dudin ligger för ankar efter motorhaveri; tidigare urantransporter till Seversk. Kustbevakning/Marinen informerade.',url:'https://www.sydostran.se/nyheter/ryskt-fartyg-med-motorhaveri-utanfor-blekinge-anvands-for-att-frakta-uran/',source:'Hultgren, 2025 / Sydöstran'},
   {country:'SE',cat:'DRONE',title:'Drönarlarm vid Ronneby flygplats',place:'Ronneby Airport (SE)',date:'2025-09-29',lat:56.266,lng:15.265,summary:'Misstänkt drönare. Plan vände mot Kalmar innan landning i Ronneby. Civil/militär flygplats (F 17).',url:'https://www.expressen.se/nyheter/expressen-direkt/?post=1ddb8d7c-0474-4d53-af33-f0cc6c69a7ed',source:'Expressen Direkt (2025)'},
   {country:'SE',cat:'DRONE',title:'Drönare stoppade flygtrafik i Sundsvall (Polisen)',place:'Sundsvall–Timrå Airport (SE)',date:'2025-09-28',lat:62.529,lng:17.444,summary:'Drönare i förbudszon. Ett plan fick vänta ~40 min. En man greps (vårdslöshet i flygtrafik m.m.).',url:'https://polisen.se/aktuellt/handelser/2025/september/29/29-september-07.14-sammanfattning-natt-vasternorrlands-lan/',source:'Polisen (2025-09-29)'},
@@ -2178,6 +2154,7 @@
 {country:'SE',cat:'INFRA',title:'Man anhållen för olovlig avbildning av skyddsobjekt vid Nackamasterna',place:'Nackamasterna, Källtorpssjön (SE)',date:'2025-12-07',lat:59.28553,lng:18.23629,summary:'En man anhölls efter att ha avbildat Nackamasterna, ett skyddsobjekt i det svenska radio- och tv-nätet. Ärendet gäller olovlig avbildning enligt skyddslagen. Medier uppger att mannen är rysk medborgare och misstänks för sabotageplaner, vilket inte bekräftats officiellt.',url:'https://www.linkedin.com/posts/svensk-osint_avbildade-nackamasterna-man-anhållen-activity-7403861602426404864-ZHvW',source:'Åklagarmyndigheten / Aftonbladet / Nyheter24 / SVT / Omni (2025)'},
     ];
 
+    // Filtrera bort blacklist och sätt unika IDn
     const myEvents = rawEvents
         .filter(item => !blacklistedCategories.includes(item.cat))
         .map((item, index) => ({ ...item, id: index }));
@@ -2198,7 +2175,7 @@
 
     const uniqueCategories = [...new Set(myEvents.map(e => e.cat))].sort();
     let activeCategories = new Set(uniqueCategories);
-    let currentSearchTerm = ""; // Håller koll på sökordet
+    let currentSearchTerm = "";
 
     const categoryColors = {};
     uniqueCategories.forEach(cat => {
@@ -2214,7 +2191,7 @@
         return categoryConfig[catCode] || { ...defaultCatConfig, label: catCode };
     }
 
-    // -- SÖKFUNKTION --
+    // -- SÖK --
     function handleSearch() {
         const input = document.getElementById('search-input');
         currentSearchTerm = input.value.toLowerCase().trim();
@@ -2234,7 +2211,7 @@
             itemDiv.innerHTML = `
                 <div class="legend-icon" style="color:${color}"><i class="fas ${info.icon}"></i></div>
                 <div class="legend-text">
-                    <strong>${info.label} <span class="legend-code">(${cat})</span></strong>
+                    <strong>${info.label}</strong>
                     <span>${info.desc}</span>
                 </div>
             `;
@@ -2242,7 +2219,7 @@
         });
     }
 
-    // -- SKAPA FILTER --
+    // -- SKAPA FILTERKNAPPAR --
     function createFilters() {
         filterContainer.innerHTML = ''; 
         uniqueCategories.forEach(cat => {
@@ -2264,6 +2241,7 @@
             label.appendChild(checkbox);
             
             const span = document.createElement('span');
+            // Använd svensk text från config
             span.innerHTML = `<i class="fas ${info.icon}" style="color:${categoryColors[cat]}; margin-right:5px;"></i> ${info.label}`;
             span.style.color = "#333";
             span.style.fontWeight = "600";
@@ -2293,7 +2271,8 @@
         document.getElementById('open-fs-btn').style.display = 'none';
         document.getElementById('close-fs-btn').style.display = 'flex';
         
-        if(timeline) timeline.setOptions({ height: '65vh' }); 
+        // Öka tidslinjens höjd lite i helskärmsläge
+        if(timeline) timeline.setOptions({ height: '600px' });
     }
 
     function exitFullscreen() {
@@ -2311,7 +2290,7 @@
         }
     });
 
-    // -- TIDSLINJE --
+    // -- TIDSLINJE SETUP --
     let timeline;
     let timelineData = new vis.DataSet([]);
     let timelineGroups = new vis.DataSet([]);
@@ -2321,6 +2300,7 @@
             const info = getCatInfo(cat);
             return {
                 id: cat,
+                // Visa ikon + svenskt namn i tidslinjens vänsterkant
                 content: `<i class="fas ${info.icon}" style="color:${categoryColors[cat]}"></i> <b>${info.label}</b>`,
                 style: `border-left: 5px solid ${categoryColors[cat]}; font-size: 0.9em;`
             };
@@ -2371,29 +2351,24 @@
     function renderAll() {
         feedContainer.innerHTML = '';
         
-        // 1. Filtrera baserat på kategori OCH sökterm
+        // 1. Filtrera
         const filtered = myEvents.filter(item => {
-            // Kolla kategori
             const hasCategory = activeCategories.has(item.cat);
-            
-            // Kolla söktext (om söktext finns)
             let matchesSearch = true;
             if (currentSearchTerm) {
                 const searchString = `${item.title} ${item.summary} ${item.place} ${item.country}`.toLowerCase();
                 matchesSearch = searchString.includes(currentSearchTerm);
             }
-
             return hasCategory && matchesSearch;
         });
 
-        // Hantera tomt resultat
         if (filtered.length === 0) {
             feedContainer.innerHTML = '<p style="text-align:center; color:#777; margin-top:20px;">Inga händelser matchar dina val.</p>';
             timelineData.clear();
             return;
         }
 
-        // Uppdatera tidslinje
+        // 2. Uppdatera tidslinje
         timelineData.clear();
         const timelineItems = filtered.map(item => ({
             id: item.id, 
@@ -2406,13 +2381,12 @@
         timelineData.add(timelineItems);
 
         // Visa bara relevanta grupper i tidslinjen
-        // (Vi visar alla grupper som är ikryssade i filtret, även om sökningen ger 0 träffar i just den kategorin, för att behålla strukturen)
         const activeGroupIds = uniqueCategories.filter(cat => activeCategories.has(cat));
         timelineGroups.forEach(group => {
             timelineGroups.update({id: group.id, visible: activeGroupIds.includes(group.id)});
         });
 
-        // Uppdatera lista
+        // 3. Uppdatera lista
         const sortedList = [...filtered].sort((a, b) => new Date(b.date) - new Date(a.date));
 
         sortedList.forEach(item => {
@@ -2447,7 +2421,7 @@
         });
     }
 
-    // Start
+    // Starta
     createLegend();
     createFilters();
     initTimeline();
