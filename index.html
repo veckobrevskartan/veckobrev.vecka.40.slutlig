@@ -11,6 +11,7 @@
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; padding: 20px; color: #333; margin: 0; }
         
+        /* Container - Standardläge */
         .container { 
             max-width: 98%; 
             margin: 0 auto; 
@@ -18,21 +19,37 @@
             padding: 20px; 
             border-radius: 8px; 
             box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+            transition: all 0.3s ease;
+        }
+
+        /* Helskärms-CSS för Containern */
+        .container.fullscreen-mode {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            max-width: 100%;
+            z-index: 9999;
+            padding: 10px;
+            box-sizing: border-box;
+            border-radius: 0;
+            overflow-y: auto; /* Tillåter scroll om fönstret blir för litet */
         }
         
-        h2 { text-align: center; color: #2c3e50; margin-bottom: 20px;}
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; margin-top: 0;}
 
         /* Kontrollpanel */
         .controls {
             background: #f8f9fa; 
             border: 1px solid #e9ecef;
             border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
+            padding: 10px;
+            margin-bottom: 15px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 15px;
+            gap: 10px;
         }
 
         .btn-group {
@@ -50,130 +67,97 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 0.9rem;
-            transition: background 0.2s, transform 0.1s;
             display: flex;
             align-items: center;
             gap: 6px;
         }
         button:hover { background-color: #34495e; }
-        button:active { transform: scale(0.98); }
         
+        /* Röd knapp för att stänga helskärm */
+        #close-fs-btn {
+            background-color: #e74c3c;
+            display: none; /* Döljs som standard */
+        }
+        #close-fs-btn:hover { background-color: #c0392b; }
+
         button.secondary { background-color: #95a5a6; }
         button.secondary:hover { background-color: #7f8c8d; }
 
         .filters { 
             display: flex; 
             flex-wrap: wrap; 
-            gap: 8px; 
+            gap: 6px; 
             justify-content: center;
         }
         
         .filters label { 
             cursor: pointer; 
-            font-size: 0.85rem; 
+            font-size: 0.8rem; 
             background: #fff; 
-            padding: 4px 10px; 
-            border-radius: 15px; 
+            padding: 3px 8px; 
+            border-radius: 12px; 
             border: 1px solid #ddd;
             display: flex;
             align-items: center;
-            transition: all 0.2s;
             user-select: none;
         }
         .filters label:hover { background: #eee; }
-        .filters input { margin-right: 6px; }
         
         /* Tidslinje */
         #visualization { 
-            margin-bottom: 40px; 
+            margin-bottom: 20px; 
             border: 1px solid #ddd; 
             border-radius: 4px; 
             background: white;
         }
 
-        /* Helskärms-CSS */
-        #visualization:fullscreen {
-            width: 100vw !important;
-            height: 100vh !important;
-            background: white;
-            padding: 20px;
-            overflow: hidden; /* Vis.js hanterar scrollen internt */
-        }
-
         /* Lista (Feed) */
-        .feed-container { max-width: 900px; margin: 0 auto; }
+        .feed-container { max-width: 900px; margin: 0 auto; padding-bottom: 50px;}
         
         .feed-item { 
-            margin-bottom: 15px; 
+            margin-bottom: 10px; 
             background: #fff;
             border: 1px solid #e1e4e8; 
             border-radius: 6px; 
             overflow: hidden; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         
         summary {
-            padding: 15px;
+            padding: 12px;
             background: #fff;
             cursor: pointer;
             display: flex;
             justify-content: space-between;
             align-items: center;
             list-style: none;
-            transition: background 0.2s;
         }
         summary::-webkit-details-marker { display: none; }
         summary:hover { background: #f8f9fa; }
-        summary::after { content: '+'; font-size: 1.5em; color: #aaa; font-weight: 300; }
+        summary::after { content: '+'; font-size: 1.5em; color: #aaa; }
         details[open] summary::after { content: '-'; }
 
         .summary-content { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; width: 100%;}
+        .date-badge { font-family: monospace; color: #666; background: #eee; padding: 2px 6px; border-radius: 4px; }
+        .title-text { font-weight: 600; color: #2c3e50; }
+        .cat-badge { font-size: 0.75em; padding: 2px 6px; border-radius: 10px; color: #fff; font-weight: bold; margin-left: auto; margin-right: 10px; }
         
-        .date-badge { 
-            font-family: monospace; 
-            color: #666; 
-            font-size: 0.9em; 
-            background: #eee; 
-            padding: 2px 6px; 
-            border-radius: 4px; 
-        }
-
-        .title-text { font-weight: 600; font-size: 1.05em; color: #2c3e50; }
-
-        .cat-badge {
-            font-size: 0.75em;
-            padding: 3px 8px;
-            border-radius: 12px;
-            color: #fff;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-left: auto; 
-            margin-right: 10px;
-        }
-        
-        .content { 
-            padding: 20px; 
-            border-top: 1px solid #eee; 
-            background: #fafbfc; 
-            line-height: 1.6; 
-            color: #444;
-        }
-        .source-link { display: block; margin-top: 10px; font-size: 0.85em; color: #007bff; text-decoration: none;}
-        .source-link:hover { text-decoration: underline; }
+        .content { padding: 15px; border-top: 1px solid #eee; background: #fafbfc; line-height: 1.5; color: #444; }
+        .source-link { display: block; margin-top: 10px; color: #007bff; text-decoration: none;}
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Omvärldsbevakning: Händelser & Tidslinje</h2>
+<div class="container" id="main-container">
+    <h2>Händelseöversikt</h2>
 
     <div class="controls">
         <div class="btn-group">
-            <button onclick="toggleFullscreen()" title="Visa helskärm"><i class="fas fa-expand"></i> Helskärm</button>
-            <button class="secondary" onclick="zoomTimeline(-0.2)" title="Zooma ut"><i class="fas fa-search-minus"></i></button>
-            <button class="secondary" onclick="zoomTimeline(0.2)" title="Zooma in"><i class="fas fa-search-plus"></i></button>
-            <button class="secondary" onclick="toggleAllFilters()" title="Välj alla / Avmarkera alla"><i class="fas fa-check-double"></i> Välj alla/inga</button>
+            <button onclick="enterFullscreen()" id="open-fs-btn"><i class="fas fa-expand"></i> Helskärm</button>
+            <button onclick="exitFullscreen()" id="close-fs-btn"><i class="fas fa-times"></i> Stäng helskärm</button>
+            
+            <button class="secondary" onclick="zoomTimeline(-0.2)"><i class="fas fa-search-minus"></i></button>
+            <button class="secondary" onclick="zoomTimeline(0.2)"><i class="fas fa-search-plus"></i></button>
+            <button class="secondary" onclick="toggleAllFilters()"><i class="fas fa-check-double"></i> Alla/Inga</button>
         </div>
         <div class="filters" id="filter-container"></div>
     </div>
@@ -191,7 +175,8 @@
     // Kategorier att exkludera
     const blacklistedCategories = ['CYBER', 'THREAT', 'CRIME'];
 
-    const rawEvents = [  {country:'SE',cat:'HYBRID',title:'Misstänkta konton söker drönarpiloter i forum',place:'Sverige (online)',date:'2025-10-05',lat:59.334,lng:18.067,summary:'Nya, misstänkta Facebook-konton erbjuder betalning för flygningar nära skyddsobjekt, och de verkar veta vilka de ska rikta in sig på. Administratörer tar bort profiler varje vecka.',url:'https://www.sverigesradio.se/artikel/dronarpiloter-soks-upp-pa-facebook-for-att-spana-pa-skyddsobjekt',source:'Sveriges Radio (2025)'},
+    const rawEvents = [
+ {country:'SE',cat:'HYBRID',title:'Misstänkta konton söker drönarpiloter i forum',place:'Sverige (online)',date:'2025-10-05',lat:59.334,lng:18.067,summary:'Nya, misstänkta Facebook-konton erbjuder betalning för flygningar nära skyddsobjekt, och de verkar veta vilka de ska rikta in sig på. Administratörer tar bort profiler varje vecka.',url:'https://www.sverigesradio.se/artikel/dronarpiloter-soks-upp-pa-facebook-for-att-spana-pa-skyddsobjekt',source:'Sveriges Radio (2025)'},
   {country:'SE',cat:'NUCLEAR',title:'Ryskt uranfartyg med motorhaveri utanför Blekinge',place:'31 km SO om Hasslö, Blekinge (SE)',date:'2025-09-29',lat:56.118,lng:15.585,summary:'Panamaflaggade Mikhail Dudin ligger för ankar efter motorhaveri; tidigare urantransporter till Seversk. Kustbevakning/Marinen informerade.',url:'https://www.sydostran.se/nyheter/ryskt-fartyg-med-motorhaveri-utanfor-blekinge-anvands-for-att-frakta-uran/',source:'Hultgren, 2025 / Sydöstran'},
   {country:'SE',cat:'DRONE',title:'Drönarlarm vid Ronneby flygplats',place:'Ronneby Airport (SE)',date:'2025-09-29',lat:56.266,lng:15.265,summary:'Misstänkt drönare. Plan vände mot Kalmar innan landning i Ronneby. Civil/militär flygplats (F 17).',url:'https://www.expressen.se/nyheter/expressen-direkt/?post=1ddb8d7c-0474-4d53-af33-f0cc6c69a7ed',source:'Expressen Direkt (2025)'},
   {country:'SE',cat:'DRONE',title:'Drönare stoppade flygtrafik i Sundsvall (Polisen)',place:'Sundsvall–Timrå Airport (SE)',date:'2025-09-28',lat:62.529,lng:17.444,summary:'Drönare i förbudszon. Ett plan fick vänta ~40 min. En man greps (vårdslöshet i flygtrafik m.m.).',url:'https://polisen.se/aktuellt/handelser/2025/september/29/29-september-07.14-sammanfattning-natt-vasternorrlands-lan/',source:'Polisen (2025-09-29)'},
@@ -2108,6 +2093,7 @@
     const feedContainer = document.getElementById('feed-container');
     const filterContainer = document.getElementById('filter-container');
     const timelineContainer = document.getElementById('visualization');
+    const mainContainer = document.getElementById('main-container');
 
     // -- SKAPA FILTER --
     function createFilters() {
@@ -2148,6 +2134,51 @@
         renderAll();
     }
 
+    // -- HELSKÄRMSLOGIK (Ny och förbättrad) --
+    function enterFullscreen() {
+        if (mainContainer.requestFullscreen) {
+            mainContainer.requestFullscreen();
+        } else if (mainContainer.webkitRequestFullscreen) { /* Safari */
+            mainContainer.webkitRequestFullscreen();
+        } else if (mainContainer.msRequestFullscreen) { /* IE11 */
+            mainContainer.msRequestFullscreen();
+        }
+        
+        mainContainer.classList.add('fullscreen-mode');
+        document.getElementById('open-fs-btn').style.display = 'none';
+        document.getElementById('close-fs-btn').style.display = 'flex';
+        
+        // Justera tidslinjens höjd för helskärm
+        if(timeline) {
+            timeline.setOptions({ height: '70vh' }); // Använd 70% av skärmhöjden
+        }
+    }
+
+    function exitFullscreen() {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) { /* Safari */
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) { /* IE11 */
+            document.msExitFullscreen();
+        }
+        
+        // Återställ stilar (hanteras även av event listener nedan)
+    }
+
+    // Lyssna på om användaren trycker ESC
+    document.addEventListener('fullscreenchange', (event) => {
+        if (!document.fullscreenElement) {
+            mainContainer.classList.remove('fullscreen-mode');
+            document.getElementById('open-fs-btn').style.display = 'flex';
+            document.getElementById('close-fs-btn').style.display = 'none';
+            if(timeline) {
+                timeline.setOptions({ height: '500px' }); // Tillbaka till normal höjd
+            }
+        }
+    });
+
+
     // -- INITIERA TIDSLINJE --
     let timeline;
     let timelineData = new vis.DataSet([]);
@@ -2157,16 +2188,17 @@
         const groups = uniqueCategories.map(cat => ({
             id: cat,
             content: cat,
-            style: `border-left: 5px solid ${categoryColors[cat]}; font-weight:bold;`
+            style: `border-left: 5px solid ${categoryColors[cat]}; font-weight:bold; font-size: 0.9em;`
         }));
         timelineGroups.add(groups);
 
         const options = {
-            // FIX: Gör att tidslinjen får en fast höjd, men man kan scrolla INUTI den.
-            height: '600px', 
-            verticalScroll: true, // Superviktigt för många kategorier!
-            zoomKey: 'ctrlKey',   // Förhindrar oavsiktlig zoom när man scrollar på sidan
+            height: '500px', // Standardhöjd
+            verticalScroll: true, 
+            horizontalScroll: true,
+            zoomKey: 'ctrlKey',
             stack: true,
+            orientation: { axis: 'top', item: 'top' }, // Datum i toppen
             zoomMin: 1000 * 60 * 60 * 24 * 1, 
             zoomMax: 1000 * 60 * 60 * 24 * 365 * 2,
             start: '2025-08-01', 
@@ -2181,9 +2213,14 @@
                 const itemId = properties.items[0];
                 const element = document.getElementById(`item-${itemId}`);
                 if(element) {
-                    element.open = true;
-                    element.scrollIntoView({behavior: "smooth", block: "center"});
-                    // Markera kortet tillfälligt
+                    // Om vi är i helskärm, måste vi scrolla inuti containern
+                    if(document.fullscreenElement) {
+                        element.open = true;
+                        element.scrollIntoView({behavior: "smooth", block: "center"});
+                    } else {
+                        element.open = true;
+                        element.scrollIntoView({behavior: "smooth", block: "center"});
+                    }
                     element.style.borderColor = "#2c3e50";
                     setTimeout(() => element.style.borderColor = "#e1e4e8", 2000);
                 }
@@ -2191,20 +2228,6 @@
         });
     }
 
-    // -- HELSKÄRMSFUNKTION --
-    function toggleFullscreen() {
-        const elem = document.getElementById("visualization");
-        
-        if (!document.fullscreenElement) {
-            elem.requestFullscreen().catch(err => {
-                alert(`Kunde inte gå till helskärm: ${err.message}`);
-            });
-        } else {
-            document.exitFullscreen();
-        }
-    }
-
-    // -- ZOOMFUNKTIONER --
     function zoomTimeline(percentage) {
         const range = timeline.getWindow();
         const interval = range.end - range.start;
@@ -2225,22 +2248,20 @@
             id: index,
             group: item.cat, 
             start: item.date,
-            content: `<span style="color:${categoryColors[item.cat]}">●</span> ${item.title.substring(0, 30)}...`,
+            content: `<span style="color:${categoryColors[item.cat]}">●</span> ${item.title.substring(0, 25)}...`,
             title: `<div style="max-width:250px;"><b>${item.title}</b><br><br>${item.summary}</div>`,
-            style: `background-color: white; border: 1px solid ${categoryColors[item.cat]}; border-left: 5px solid ${categoryColors[item.cat]}; color: #333; border-radius: 3px; cursor: pointer;`
+            style: `background-color: white; border: 1px solid ${categoryColors[item.cat]}; border-left: 5px solid ${categoryColors[item.cat]}; color: #333; border-radius: 3px; cursor: pointer; font-size: 0.85em;`
         }));
         timelineData.add(timelineItems);
 
-        // Uppdatera grupper så bara valda syns (valfritt, men snyggare)
         const visibleGroups = uniqueCategories
             .filter(cat => activeCategories.has(cat))
             .map(cat => ({
                 id: cat,
                 content: cat,
-                style: `border-left: 5px solid ${categoryColors[cat]}; font-weight:bold;`
+                style: `border-left: 5px solid ${categoryColors[cat]}; font-weight:bold; font-size: 0.9em;`
             }));
-        timelineGroups.clear();
-        timelineGroups.add(visibleGroups);
+        // Vi uppdaterar inte grupper här för att undvika "hopp", men man kan göra det om man vill dölja tomma rader.
 
         const sortedList = filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
 
